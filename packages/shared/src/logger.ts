@@ -1,0 +1,16 @@
+import pino from 'pino';
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+const baseLogger = pino({
+  level: process.env.LOG_LEVEL ?? 'info',
+  transport: isDev
+    ? { target: 'pino-pretty', options: { colorize: true } }
+    : undefined,
+});
+
+export function createLogger(name: string) {
+  return baseLogger.child({ module: name });
+}
+
+export const logger = baseLogger;

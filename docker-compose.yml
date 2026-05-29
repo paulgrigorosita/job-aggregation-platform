@@ -1,0 +1,109 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: jap-postgres
+    environment:
+      POSTGRES_USER: jap
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: jap
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jap -d jap']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: jap-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - internal
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: jap-api
+    environment:
+      DATABASE_URL: postgresql://jap:secret@postgres:5432/jap
+      REDIS_URL: redis://redis:6379
+      PORT: 3001
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - '3001:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: jap-worker
+    environment:
+      DATABASE_URL: postgresql://jap:secret@postgres:5432/jap
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      GREENHOUSE_COMPANIES: ${GREENHOUSE_COMPANIES:-stripe,notion,figma}
+      LEVER_COMPANIES: ${LEVER_COMPANIES:-openai,anthropic}
+      ASHBY_COMPANIES: ${ASHBY_COMPANIES:-linear,vercel}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      ALERT_MIN_SCORE: ${ALERT_MIN_SCORE:-60}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    container_name: jap-dashboard
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:3001/api/v1
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+    networks:
+      - internal
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  internal:
+    driver: bridge

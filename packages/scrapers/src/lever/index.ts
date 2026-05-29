@@ -1,0 +1,103 @@
+import { ScraperSource, hashUrl, slugify, parseSalary, type NormalizedJob, createHttpClient } from '@jap/shared';
+import { BaseScraper } from '../base/BaseScraper.js';
+import { normalizeTitle, normalizeDescription, normalizeLocation } from '../normalizer/index.js';
+
+interface LeverPosting {
+  id: string;
+  text: string;
+  categories: {
+    location?: string;
+    commitment?: string;
+    department?: string;
+    team?: string;
+  };
+  description: string;
+  descriptionPlain: string;
+  lists: Array<{ text: string; content: string }>;
+  additional: string;
+  additionalPlain: string;
+  hostedUrl: string;
+  applyUrl: string;
+  createdAt: number;
+  tags: string[];
+  salaryRange?: { min: number; max: number; currency: string; interval: string };
+}
+
+interface LeverResponse {
+  data: LeverPosting[];
+  next?: string;
+}
+
+export class LeverScraper extends BaseScraper {
+  readonly source = ScraperSource.LEVER;
+  private readonly http = createHttpClient(process.env.PROXY_URL);
+
+  private get companies(): string[] {
+    return (process.env.LEVER_COMPANIES ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  protected async fetchAll(): Promise<NormalizedJob[]> {
+    const results: NormalizedJob[] = [];
+
+    for (const slug of this.companies) {
+      try {
+        const jobs = await this.fetchCompanyJobs(slug);
+        results.push(...jobs);
+        await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
+      } catch (err: unknown) {
+        this.logger.warn({ company: slug, err }, 'Failed to scrape Lever company');
+      }
+    }
+
+    return results;
+  }
+
+  private async fetchCompanyJobs(slug: string): Promise<NormalizedJob[]> {
+    const results: NormalizedJob[] = [];
+    let nextUrl: string | undefined = `https://api.lever.co/v0/postings/${slug}?mode=json&limit=500`;
+
+    while (nextUrl) {
+      const response = await this.http.get(nextUrl).json<LeverResponse>();
+      const postings = Array.isArray(response) ? (response as LeverPosting[]) : response.data;
+
+      for (const posting of postings ?? []) {
+        const { location, remote } = normalizeLocation(posting.categories?.location ?? '');
+        const fullHtml = [posting.description, ...(posting.lists ?? []).map((l) => l.content), posting.additional].join('\n');
+        const urlHash = hashUrl(posting.hostedUrl);
+
+        results.push({
+          title: normalizeTitle(posting.text),
+          companyName: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          companySlug: slugify(slug),
+          location,
+          remote,
+          salary: posting.salaryRange
+            ? {
+                min: posting.salaryRange.min,
+                max: posting.salaryRange.max,
+                currency: posting.salaryRange.currency || 'USD',
+                period: posting.salaryRange.interval === 'yearly' ? 'annual' : 'hourly',
+              }
+            : parseSalary(posting.descriptionPlain),
+          applyUrl: posting.hostedUrl,
+          urlHash,
+          description: normalizeDescription(fullHtml),
+          postedAt: posting.createdAt ? new Date(posting.createdAt) : null,
+          source: this.source,
+          tags: posting.tags ?? [],
+          aiScore: 0,
+          classifierFlags: { isAI: false, isFullStack: false, isBackend: false, isFrontend: false },
+        });
+      }
+
+      // next is a full URL per Lever docs — use as-is
+      nextUrl = typeof response === 'object' && !Array.isArray(response) ? response.next : undefined;
+    }
+
+    this.logger.debug({ company: slug, count: results.length }, 'Lever company scraped');
+    return results;
+  }
+}

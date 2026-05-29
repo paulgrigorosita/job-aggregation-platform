@@ -1,0 +1,89 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  output          = "../src/generated/client"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector", schema: "public")]
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  domain    String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  jobs      Job[]
+
+  @@index([slug])
+  @@map("companies")
+}
+
+model Job {
+  id             String    @id @default(cuid())
+  urlHash        String    @unique
+  applyUrl       String
+  title          String
+  companyId      String
+  company        Company   @relation(fields: [companyId], references: [id])
+  location       String?
+  remote         Boolean   @default(false)
+  salaryMin      Int?
+  salaryMax      Int?
+  salaryCurrency String?   @default("USD")
+  salaryPeriod   String?
+  description    String?   @db.Text
+  postedAt       DateTime?
+  source         String
+  aiScore        Int       @default(0)
+  isAI           Boolean   @default(false)
+  isFullStack    Boolean   @default(false)
+  isBackend      Boolean   @default(false)
+  isFrontend     Boolean   @default(false)
+  firstSeenAt    DateTime  @default(now())
+  lastSeenAt     DateTime  @default(now())
+  isActive       Boolean   @default(true)
+  tags           JobTag[]
+
+  @@index([source])
+  @@index([remote])
+  @@index([isAI])
+  @@index([postedAt])
+  @@index([aiScore])
+  @@index([companyId])
+  @@map("jobs")
+}
+
+model JobTag {
+  id    String @id @default(cuid())
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  tag   String
+
+  @@unique([jobId, tag])
+  @@index([tag])
+  @@map("job_tags")
+}
+
+model ScraperRun {
+  id           String    @id @default(cuid())
+  source       String
+  status       String
+  jobsFetched  Int       @default(0)
+  jobsNew      Int       @default(0)
+  jobsDupe     Int       @default(0)
+  jobsRejected Int       @default(0)
+  errors       Json?
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+
+  @@index([source])
+  @@index([startedAt])
+  @@map("scraper_runs")
+}
