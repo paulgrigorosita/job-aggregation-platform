@@ -2,9 +2,8 @@
   "name": "@jap/scrapers",
   "version": "0.1.0",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs --out-dir dist --external @jap/shared --external @jap/database --external playwright --external cheerio --external turndown --external date-fns",
+    "build": "tsup src/index.ts --format cjs --out-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
