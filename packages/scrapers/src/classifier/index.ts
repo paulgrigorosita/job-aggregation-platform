@@ -117,6 +117,13 @@ const TECHNICAL_TITLE_PATTERNS = [
   // Architect
   /solutions\s+architect/i, /software\s+architect/i, /cloud\s+architect/i,
   /security\s+architect/i, /data\s+architect/i,
+  // AI / Automation specializations
+  /ai\s+agent/i, /ai\s+automation/i, /ai\s+platform/i, /ai\s+infrastructure/i,
+  /llm\s+engineer/i, /prompt\s+engineer/i, /rag\s+engineer/i,
+  /applied\s+ai/i, /applied\s+ml/i, /applied\s+scientist/i,
+  /nlp\s+engineer/i, /computer\s+vision\s+engineer/i,
+  /robotics\s+engineer/i, /automation\s+engineer/i,
+  /\bgenai\b/i, /generative\s+ai/i, /multimodal/i,
 ];
 
 function countKeywordHits(text: string, category: KeywordCategory): number {
