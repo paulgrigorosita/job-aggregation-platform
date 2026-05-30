@@ -83,8 +83,8 @@ export default async function JobPage({ params }: { params: { id: string } }) {
 
         {job.description && (
           <div className="mt-8 prose dark:prose-invert max-w-none">
-            {/<[a-z][\s\S]*>/i.test(job.description)
-              ? <div dangerouslySetInnerHTML={{ __html: job.description }} />
+            {/<[a-z][\s\S]*>/i.test(job.description) || job.description.includes('&lt;')
+              ? <div dangerouslySetInnerHTML={{ __html: job.description.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ') }} />
               : <ReactMarkdown>{job.description}</ReactMarkdown>
             }
           </div>

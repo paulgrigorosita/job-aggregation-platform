@@ -8,18 +8,26 @@ export function normalizeTitle(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim();
 }
 
-export function normalizeDescription(html: string): string {
-  if (!html) return '';
+export function normalizeDescription(raw: string): string {
+  if (!raw) return '';
+  // Unescape HTML entities that ATS platforms double-encode
+  const html = raw
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
   if (!html.includes('<')) return html.slice(0, 15_000);
   try {
     const $ = cheerio.load(html);
-    // Strip noisy attributes injected by Google Sheets / ATS copy-paste
-    $('[data-sheets-root],[data-sheets-value],[data-sheets-formula]').each((_, el) => {
-      Object.keys((el as cheerio.TagElement).attribs ?? {})
+    $('*').each((_, el) => {
+      const elem = el as cheerio.TagElement;
+      Object.keys(elem.attribs ?? {})
         .filter((a) => a.startsWith('data-sheets'))
-        .forEach((a) => $(el).removeAttr(a));
+        .forEach((a) => $(elem).removeAttr(a));
     });
-    return $.html('body > *') || $.text().trim().slice(0, 15_000);
+    return ($.html('body > *') ?? '').slice(0, 15_000);
   } catch {
     return html.slice(0, 15_000);
   }
