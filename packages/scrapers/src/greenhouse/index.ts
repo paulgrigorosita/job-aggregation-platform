@@ -36,7 +36,7 @@ export class GreenhouseScraper extends BaseScraper {
     for (const slug of this.companies) {
       try {
         const url = `https://boards-api.greenhouse.io/v1/boards/${slug}/jobs?content=true`;
-        const response = await this.http.get(url).json<GreenhouseResponse>();
+        const response = await this.http.get<GreenhouseResponse>(url);
 
         for (const job of response.jobs ?? []) {
           const { location, remote } = normalizeLocation(job.location?.name ?? '');

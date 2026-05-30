@@ -4,14 +4,14 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs --out-dir dist --external got-scraping --external date-fns",
+    "build": "tsup src/index.ts --dts --format cjs --out-dir dist --external date-fns",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
     "pino": "^8.21.0",
     "pino-pretty": "^11.0.0",
-    "got-scraping": "^4.0.0",
+    "axios": "^1.7.0",
     "date-fns": "^3.6.0"
   },
   "devDependencies": {

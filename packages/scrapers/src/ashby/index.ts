@@ -50,12 +50,7 @@ export class AshbyScraper extends BaseScraper {
   private async fetchCompanyJobs(slug: string): Promise<NormalizedJob[]> {
     // Use Ashby's official public posting API
     const apiUrl = `https://api.ashbyhq.com/posting-api/job-board/${slug}`;
-    const response = await this.http
-      .post(apiUrl, {
-        json: { includeCompensation: true },
-        headers: { 'Content-Type': 'application/json' },
-      })
-      .json<AshbyResponse>();
+    const response = await this.http.post<AshbyResponse>(apiUrl, { includeCompensation: true });
 
     const companyName = response.jobBoard?.title ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     const companySlug = slugify(slug);

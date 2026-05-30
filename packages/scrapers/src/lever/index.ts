@@ -60,7 +60,7 @@ export class LeverScraper extends BaseScraper {
     let nextUrl: string | undefined = `https://api.lever.co/v0/postings/${slug}?mode=json&limit=500`;
 
     while (nextUrl) {
-      const response = await this.http.get(nextUrl).json<LeverResponse>();
+      const response = await this.http.get<LeverResponse>(nextUrl);
       const postings = Array.isArray(response) ? (response as LeverPosting[]) : response.data;
 
       for (const posting of postings ?? []) {

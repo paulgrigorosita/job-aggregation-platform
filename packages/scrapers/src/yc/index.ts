@@ -37,9 +37,9 @@ export class YCScraper extends BaseScraper {
       // YC Work at a Startup API
       const url = 'https://www.workatastartup.com/company_filters?demographic=any&hasEquity=any&hasSalary=any&industry=any&interviewProcess=any&jobType=any&layout=list-compact&role=eng&sortBy=jobs&tab=any&usVisaNotRequired=any';
 
-      const response = await this.http.get(url, {
+      const response = await this.http.get<{ companies: Array<{ name: string; slug: string; jobs: Array<{ id: number; title: string; remote: boolean; description: string; country_codes?: string[]; created_at: string; job_url?: string }> }> }>(url, {
         headers: { Accept: 'application/json', 'x-requested-with': 'XMLHttpRequest' },
-      }).json<{ companies: Array<{ name: string; slug: string; jobs: Array<{ id: number; title: string; remote: boolean; description: string; country_codes?: string[]; created_at: string; job_url?: string }> }> }>();
+      });
 
       const companies = response?.companies ?? [];
 
@@ -83,11 +83,10 @@ export class YCScraper extends BaseScraper {
 
   private async fetchFallback(): Promise<NormalizedJob[]> {
     try {
-      const response = await this.http
-        .get('https://www.workatastartup.com/jobs?role=eng', {
-          headers: { Accept: 'application/json' },
-        })
-        .json<YCResponse>();
+      const response = await this.http.get<YCResponse>(
+        'https://www.workatastartup.com/jobs?role=eng',
+        { headers: { Accept: 'application/json' } }
+      );
 
       return (response.jobs ?? []).map((job) => {
         const location = job.remote ? 'Remote' : job.locations?.[0] ?? '';
