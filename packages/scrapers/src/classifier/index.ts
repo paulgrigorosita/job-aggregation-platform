@@ -46,49 +46,77 @@ const EXCLUDED_TITLES = [
   /intern/i, /internship/i, /co.?op/i,
   // HR / Recruiting
   /recruit/i, /talent\s+acquisition/i, /human\s+resources/i, /\bhr\b/i,
-  /sourcer/i, /headhunter/i,
+  /sourcer/i, /headhunter/i, /people\s+ops/i, /people\s+partner/i,
+  /benefits/i, /compensation/i, /\bhris\b/i,
   // Sales & Marketing
   /\bsales\b/i, /account\s+executive/i, /account\s+manager/i,
-  /business\s+development/i, /\bbdr\b/i, /\bsdr\b/i, /\bae\b/i,
+  /business\s+development/i, /\bbdr\b/i, /\bsdr\b/i,
   /marketing/i, /demand\s+generation/i, /growth\s+manager/i,
   /brand\s+manager/i, /content\s+strat/i, /social\s+media/i,
   /seo\s+manager/i, /copywriter/i, /community\s+manager/i,
+  /community\s+lead/i, /developer\s+community/i, /developer\s+advocate/i,
+  /developer\s+relations/i, /\bdevrel\b/i,
   // Finance & Accounting
-  /accountant/i, /accounting\s+manager/i, /\bcfo\b/i, /finance\s+manager/i,
-  /financial\s+analyst/i, /bookkeeper/i, /controller/i, /treasurer/i,
+  /accountant/i, /accounting/i, /\bcfo\b/i, /finance\s+manager/i,
+  /financial\s+analyst/i, /bookkeeper/i, /treasurer/i,
   /payroll/i, /accounts\s+payable/i, /accounts\s+receivable/i,
-  // Legal
+  /economist/i, /\bfp&a\b/i,
+  // Legal & Policy
   /\blegal\b/i, /counsel/i, /paralegal/i, /attorney/i, /compliance\s+manager/i,
+  /policy/i, /regulatory/i, /government\s+affairs/i,
   // Operations & Admin
   /operations\s+manager/i, /office\s+manager/i, /executive\s+assistant/i,
-  /administrative\s+assistant/i, /\bea\b.*assistant/i, /receptionist/i,
-  /coordinator/i, /office\s+coordinator/i, /facilities/i,
-  // Product (non-engineering)
-  /product\s+manager/i, /\bpm\b/i, /program\s+manager/i,
-  /project\s+manager/i, /\bpmo\b/i,
+  /administrative/i, /receptionist/i, /coordinator/i, /facilities/i,
+  /procurement/i, /supply\s+chain/i, /logistics/i,
+  // Product & Program (non-engineering)
+  /product\s+manager/i, /program\s+manager/i, /project\s+manager/i, /\bpmo\b/i,
+  /implementation\s+consultant/i, /implementation\s+specialist/i,
+  /solutions\s+consultant/i, /enterprise\s+consultant/i,
+  /management\s+consultant/i, /\bconsultant\b/i,
   // Design (non-engineering)
-  /product\s+design/i, /graphic\s+design/i, /brand\s+design/i,
-  /visual\s+design/i, /motion\s+design/i, /illustrat/i,
+  /\bdesigner\b/i, /product\s+design/i, /graphic\s+design/i,
+  /brand\s+design/i, /visual\s+design/i, /motion\s+design/i,
+  /ux\s+designer/i, /ui\s+designer/i, /illustrat/i,
   // Support & Success
   /support\s+specialist/i, /customer\s+success/i, /customer\s+support/i,
   /technical\s+support/i, /help\s+desk/i, /\bcsm\b/i,
   // Executive non-technical
   /chief\s+of\s+staff/i, /\bcoo\b/i, /\bcmo\b/i, /\bcro\b/i,
+  /head\s+of\s+(?!engineering|platform|infrastructure|security|data)/i,
+  /director.*(?:procurement|community|policy|communications|finance|legal|hr|people|marketing|sales)/i,
   // Other non-technical
-  /data\s+analyst/i, /business\s+analyst/i, /\bpr\b\s+manager/i,
+  /data\s+analyst/i, /business\s+analyst/i,
   /partnerships/i, /ambassador/i, /event\s+manager/i,
+  /communications/i, /public\s+relations/i, /\bpr\s+manager\b/i,
+  /technical\s+writer/i, /documentation/i,
 ];
 
 const TECHNICAL_TITLE_PATTERNS = [
-  /engineer/i, /developer/i, /architect/i, /\bswe\b/i,
-  /software/i, /backend/i, /frontend/i, /full.?stack/i,
-  /\bml\b/i, /\bai\b/i, /machine\s+learning/i, /deep\s+learning/i,
-  /devops/i, /\bsre\b/i, /platform/i, /infrastructure/i,
+  // Core engineering
+  /software\s+engineer/i, /\bswe\b/i,
+  /backend\s+engineer/i, /back.?end\s+engineer/i,
+  /frontend\s+engineer/i, /front.?end\s+engineer/i,
+  /full.?stack\s+engineer/i, /full.?stack\s+developer/i,
+  /web\s+developer/i, /web\s+engineer/i,
+  // Specialized engineering
+  /ml\s+engineer/i, /ai\s+engineer/i, /machine\s+learning\s+engineer/i,
+  /deep\s+learning\s+engineer/i, /research\s+engineer/i,
   /data\s+engineer/i, /data\s+scientist/i, /analytics\s+engineer/i,
-  /security\s+engineer/i, /cloud\s+engineer/i, /embedded/i,
-  /mobile/i, /android/i, /ios\s+engineer/i, /firmware/i,
-  /compiler/i, /\bvp\s+of\s+engineering\b/i, /\bcto\b/i,
-  /engineering\s+manager/i, /staff\s+engineer/i, /principal\s+engineer/i,
+  /devops\s+engineer/i, /\bsre\b/i, /site\s+reliability/i,
+  /platform\s+engineer/i, /infrastructure\s+engineer/i,
+  /cloud\s+engineer/i, /security\s+engineer/i,
+  /mobile\s+engineer/i, /android\s+engineer/i, /ios\s+engineer/i,
+  /embedded\s+engineer/i, /firmware\s+engineer/i,
+  /compiler\s+engineer/i, /systems\s+engineer/i,
+  // Leadership (engineering-specific)
+  /engineering\s+manager/i, /\bvp.*engineering\b/i, /\bcto\b/i,
+  /staff\s+engineer/i, /principal\s+engineer/i, /distinguished\s+engineer/i,
+  /director.*engineering/i, /head\s+of\s+engineering/i,
+  /head\s+of\s+platform/i, /head\s+of\s+infrastructure/i,
+  /head\s+of\s+security/i, /head\s+of\s+data/i,
+  // Architect
+  /solutions\s+architect/i, /software\s+architect/i, /cloud\s+architect/i,
+  /security\s+architect/i, /data\s+architect/i,
 ];
 
 function countKeywordHits(text: string, category: KeywordCategory): number {
