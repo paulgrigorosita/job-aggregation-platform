@@ -10,13 +10,18 @@ export function normalizeTitle(raw: string): string {
 
 export function normalizeDescription(html: string): string {
   if (!html) return '';
-  // If it looks like plain text already
   if (!html.includes('<')) return html.slice(0, 15_000);
   try {
-    return turndown.turndown(html).slice(0, 15_000);
-  } catch {
     const $ = cheerio.load(html);
-    return $.text().replace(/\s+/g, ' ').trim().slice(0, 15_000);
+    // Strip noisy attributes injected by Google Sheets / ATS copy-paste
+    $('[data-sheets-root],[data-sheets-value],[data-sheets-formula]').each((_, el) => {
+      Object.keys((el as cheerio.TagElement).attribs ?? {})
+        .filter((a) => a.startsWith('data-sheets'))
+        .forEach((a) => $(el).removeAttr(a));
+    });
+    return $.html('body > *') || $.text().trim().slice(0, 15_000);
+  } catch {
+    return html.slice(0, 15_000);
   }
 }
 
