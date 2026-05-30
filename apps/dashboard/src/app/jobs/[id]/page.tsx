@@ -1,6 +1,5 @@
 import { fetchJob } from '@/lib/api';
 import { notFound } from 'next/navigation';
-import ReactMarkdown from 'react-markdown';
 import { AiScoreBadge } from '@/components/AiScoreBadge';
 import { SourceBadge } from '@/components/SourceBadge';
 import { formatDistanceToNow } from 'date-fns';
@@ -82,9 +81,10 @@ export default async function JobPage({ params }: { params: { id: string } }) {
         </a>
 
         {job.description && (
-          <div className="mt-8 prose dark:prose-invert max-w-none">
-            <ReactMarkdown>{job.description}</ReactMarkdown>
-          </div>
+          <div
+            className="mt-8 prose dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: job.description }}
+          />
         )}
       </div>
     </div>
