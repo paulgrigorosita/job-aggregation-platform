@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs --out-dir dist",
+    "build": "tsup src/index.ts --dts --format cjs --out-dir dist --external @jap/shared --external @jap/database --external playwright --external cheerio --external turndown --external date-fns",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

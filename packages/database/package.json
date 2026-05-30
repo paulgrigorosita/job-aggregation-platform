@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "prisma generate && tsup src/index.ts --dts --format cjs --out-dir dist",
+    "build": "prisma generate && tsup src/index.ts --dts --format cjs --out-dir dist --external @prisma/client",
     "typecheck": "tsc --noEmit",
     "test": "echo \"No tests in database\" && exit 0",
     "prisma:generate": "prisma generate",
