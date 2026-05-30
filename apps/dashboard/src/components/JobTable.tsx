@@ -22,9 +22,9 @@ export function JobTable({ jobs }: { jobs: Job[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 w-2/5">Role</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 w-1/3">Role</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">Company</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden md:table-cell w-44">Location</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden md:table-cell w-56">Location</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden lg:table-cell">Skills</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">Score</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden sm:table-cell">Source</th>
@@ -51,7 +51,7 @@ export function JobTable({ jobs }: { jobs: Job[] }) {
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden md:table-cell w-44">
                   <span className="flex items-center gap-1">
                     <MapPin size={12} className="shrink-0" />
-                    <span className="line-clamp-1 max-w-[160px]">{job.location ?? '—'}</span>
+                    <span className="line-clamp-1 max-w-[200px]">{job.location ?? '—'}</span>
                   </span>
                 </td>
                 <td className="px-4 py-3 hidden lg:table-cell">
