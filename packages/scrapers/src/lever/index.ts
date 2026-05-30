@@ -1,4 +1,5 @@
 import { ScraperSource, hashUrl, slugify, parseSalary, type NormalizedJob, createHttpClient } from '@jap/shared';
+import { db } from '@jap/database';
 import { BaseScraper } from '../base/BaseScraper.js';
 import { normalizeTitle, normalizeDescription, normalizeLocation } from '../normalizer/index.js';
 
@@ -32,30 +33,27 @@ export class LeverScraper extends BaseScraper {
   readonly source = ScraperSource.LEVER;
   private readonly http = createHttpClient(process.env.PROXY_URL);
 
-  private get companies(): string[] {
-    return (process.env.LEVER_COMPANIES ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-
   protected async fetchAll(): Promise<NormalizedJob[]> {
     const results: NormalizedJob[] = [];
+    const companies = await db.company.findMany({
+      where: { atsType: 'lever', atsSlug: { not: null } },
+      select: { name: true, atsSlug: true },
+    });
 
-    for (const slug of this.companies) {
+    for (const { name, atsSlug } of companies) {
       try {
-        const jobs = await this.fetchCompanyJobs(slug);
+        const jobs = await this.fetchCompanyJobs(atsSlug!, name);
         results.push(...jobs);
         await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
       } catch (err: unknown) {
-        this.logger.warn({ company: slug, err }, 'Failed to scrape Lever company');
+        this.logger.warn({ company: atsSlug, err }, 'Failed to scrape Lever company');
       }
     }
 
     return results;
   }
 
-  private async fetchCompanyJobs(slug: string): Promise<NormalizedJob[]> {
+  private async fetchCompanyJobs(slug: string, companyName: string): Promise<NormalizedJob[]> {
     const results: NormalizedJob[] = [];
     let nextUrl: string | undefined = `https://api.lever.co/v0/postings/${slug}?mode=json&limit=500`;
 
@@ -70,7 +68,7 @@ export class LeverScraper extends BaseScraper {
 
         results.push({
           title: normalizeTitle(posting.text),
-          companyName: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          companyName,
           companySlug: slugify(slug),
           location,
           remote,

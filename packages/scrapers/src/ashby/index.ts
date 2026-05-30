@@ -1,4 +1,5 @@
 import { ScraperSource, hashUrl, slugify, type NormalizedJob, createHttpClient } from '@jap/shared';
+import { db } from '@jap/database';
 import { BaseScraper } from '../base/BaseScraper.js';
 import { normalizeTitle, normalizeDescription, normalizeLocation, normalizeDate } from '../normalizer/index.js';
 
@@ -24,35 +25,31 @@ export class AshbyScraper extends BaseScraper {
   readonly source = ScraperSource.ASHBY;
   private readonly http = createHttpClient(process.env.PROXY_URL);
 
-  private get companies(): string[] {
-    return (process.env.ASHBY_COMPANIES ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-
   protected async fetchAll(): Promise<NormalizedJob[]> {
     const results: NormalizedJob[] = [];
+    const companies = await db.company.findMany({
+      where: { atsType: 'ashby', atsSlug: { not: null } },
+      select: { name: true, atsSlug: true },
+    });
 
-    for (const slug of this.companies) {
+    for (const { name, atsSlug } of companies) {
       try {
-        const jobs = await this.fetchCompanyJobs(slug);
+        const jobs = await this.fetchCompanyJobs(atsSlug!, name);
         results.push(...jobs);
         await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
       } catch (err: unknown) {
-        this.logger.warn({ company: slug, err }, 'Failed to scrape Ashby company');
+        this.logger.warn({ company: atsSlug, err }, 'Failed to scrape Ashby company');
       }
     }
 
     return results;
   }
 
-  private async fetchCompanyJobs(slug: string): Promise<NormalizedJob[]> {
-    // Use Ashby's official public posting API
+  private async fetchCompanyJobs(slug: string, companyName: string): Promise<NormalizedJob[]> {
     const apiUrl = `https://api.ashbyhq.com/posting-api/job-board/${slug}`;
     const response = await this.http.post<AshbyResponse>(apiUrl, { includeCompensation: true });
 
-    const companyName = response.jobBoard?.title ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const resolvedName = response.jobBoard?.title ?? companyName;
     const companySlug = slugify(slug);
 
     return (response.jobs ?? []).map((job) => {
@@ -64,7 +61,7 @@ export class AshbyScraper extends BaseScraper {
 
       return {
         title: normalizeTitle(job.title),
-        companyName,
+        companyName: resolvedName,
         companySlug,
         location,
         remote: job.isRemote || remote,

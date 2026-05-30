@@ -1,4 +1,5 @@
 import { ScraperSource, hashUrl, slugify, parseSalary, type NormalizedJob, createHttpClient } from '@jap/shared';
+import { db } from '@jap/database';
 import { BaseScraper } from '../base/BaseScraper.js';
 import { normalizeTitle, normalizeDescription, normalizeLocation, normalizeDate } from '../normalizer/index.js';
 
@@ -23,17 +24,19 @@ export class GreenhouseScraper extends BaseScraper {
   readonly source = ScraperSource.GREENHOUSE;
   private readonly http = createHttpClient(process.env.PROXY_URL);
 
-  private get companies(): string[] {
-    return (process.env.GREENHOUSE_COMPANIES ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+  private async getCompanies(): Promise<Array<{ name: string; atsSlug: string }>> {
+    const rows = await db.company.findMany({
+      where: { atsType: 'greenhouse', atsSlug: { not: null } },
+      select: { name: true, atsSlug: true },
+    });
+    return rows.map((r) => ({ name: r.name, atsSlug: r.atsSlug! }));
   }
 
   protected async fetchAll(): Promise<NormalizedJob[]> {
     const results: NormalizedJob[] = [];
+    const companies = await this.getCompanies();
 
-    for (const slug of this.companies) {
+    for (const { name, atsSlug: slug } of companies) {
       try {
         const url = `https://boards-api.greenhouse.io/v1/boards/${slug}/jobs?content=true`;
         const response = await this.http.get<GreenhouseResponse>(url);
@@ -44,7 +47,7 @@ export class GreenhouseScraper extends BaseScraper {
 
           results.push({
             title: normalizeTitle(job.title),
-            companyName: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+            companyName: name,
             companySlug: slugify(slug),
             location,
             remote,
