@@ -7,3 +7,4 @@ dist/
 .next/
 coverage/
 *.tsbuildinfo
+packages/database/src/generated/
