@@ -1,4 +1,4 @@
-import type { StatsResponse } from '@jap/shared';
+import type { StatsResponse } from '@/lib/api';
 import { Briefcase, Building2, Brain, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

@@ -1,6 +1,13 @@
-import type { StatsResponse } from '@jap/shared';
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+
+export interface StatsResponse {
+  totalJobs: number;
+  totalCompanies: number;
+  aiJobs: number;
+  jobsBySource: Record<string, number>;
+  topTags: Array<{ tag: string; count: number }>;
+  lastScrapedAt: string | null;
+}
 
 export interface Job {
   id: string;
