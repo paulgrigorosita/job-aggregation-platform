@@ -33,17 +33,6 @@ export function FilterBar({ filters, onFiltersChange }: Props) {
           />
         </div>
 
-        {/* Remote toggle */}
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            checked={filters.remote === true}
-            onChange={(e) => onFiltersChange({ remote: e.target.checked ? true : undefined })}
-            className="rounded"
-          />
-          Remote only
-        </label>
-
         {/* AI jobs toggle */}
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input
