@@ -49,11 +49,19 @@ export abstract class BaseScraper {
         return pass;
       });
 
-      // Exclude internships and non-technical roles
-      const relevantJobs = usJobs.filter((job) => {
+      // Exclude non-technical roles
+      const technicalJobs = usJobs.filter((job) => {
         const excluded = isExcludedTitle(job.title);
         if (excluded) stats.usFiltered++;
         return !excluded;
+      });
+
+      // Remote-only: exclude onsite and hybrid
+      const relevantJobs = technicalJobs.filter((job) => {
+        const loc = (job.location ?? '').toLowerCase();
+        const isOnsite = !job.remote && !/remote/i.test(loc);
+        if (isOnsite) stats.usFiltered++;
+        return !isOnsite;
       });
 
       this.logger.info(
