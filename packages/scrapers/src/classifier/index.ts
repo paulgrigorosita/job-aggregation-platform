@@ -42,9 +42,53 @@ const FRONTEND_KEYWORDS: KeywordCategory = {
 };
 
 const EXCLUDED_TITLES = [
-  /intern/i, /internship/i, /co.?op/i, /recruit/i, /talent\s+acquisition/i,
-  /human\s+resources/i, /\bhr\b/i, /sales/i, /marketing/i, /finance/i,
-  /accountant/i, /legal/i, /counsel/i, /paralegal/i, /operations\s+manager/i,
+  // Internships
+  /intern/i, /internship/i, /co.?op/i,
+  // HR / Recruiting
+  /recruit/i, /talent\s+acquisition/i, /human\s+resources/i, /\bhr\b/i,
+  /sourcer/i, /headhunter/i,
+  // Sales & Marketing
+  /\bsales\b/i, /account\s+executive/i, /account\s+manager/i,
+  /business\s+development/i, /\bbdr\b/i, /\bsdr\b/i, /\bae\b/i,
+  /marketing/i, /demand\s+generation/i, /growth\s+manager/i,
+  /brand\s+manager/i, /content\s+strat/i, /social\s+media/i,
+  /seo\s+manager/i, /copywriter/i, /community\s+manager/i,
+  // Finance & Accounting
+  /accountant/i, /accounting\s+manager/i, /\bcfo\b/i, /finance\s+manager/i,
+  /financial\s+analyst/i, /bookkeeper/i, /controller/i, /treasurer/i,
+  /payroll/i, /accounts\s+payable/i, /accounts\s+receivable/i,
+  // Legal
+  /\blegal\b/i, /counsel/i, /paralegal/i, /attorney/i, /compliance\s+manager/i,
+  // Operations & Admin
+  /operations\s+manager/i, /office\s+manager/i, /executive\s+assistant/i,
+  /administrative\s+assistant/i, /\bea\b.*assistant/i, /receptionist/i,
+  /coordinator/i, /office\s+coordinator/i, /facilities/i,
+  // Product (non-engineering)
+  /product\s+manager/i, /\bpm\b/i, /program\s+manager/i,
+  /project\s+manager/i, /\bpmo\b/i,
+  // Design (non-engineering)
+  /product\s+design/i, /graphic\s+design/i, /brand\s+design/i,
+  /visual\s+design/i, /motion\s+design/i, /illustrat/i,
+  // Support & Success
+  /support\s+specialist/i, /customer\s+success/i, /customer\s+support/i,
+  /technical\s+support/i, /help\s+desk/i, /\bcsm\b/i,
+  // Executive non-technical
+  /chief\s+of\s+staff/i, /\bcoo\b/i, /\bcmo\b/i, /\bcro\b/i,
+  // Other non-technical
+  /data\s+analyst/i, /business\s+analyst/i, /\bpr\b\s+manager/i,
+  /partnerships/i, /ambassador/i, /event\s+manager/i,
+];
+
+const TECHNICAL_TITLE_PATTERNS = [
+  /engineer/i, /developer/i, /architect/i, /\bswe\b/i,
+  /software/i, /backend/i, /frontend/i, /full.?stack/i,
+  /\bml\b/i, /\bai\b/i, /machine\s+learning/i, /deep\s+learning/i,
+  /devops/i, /\bsre\b/i, /platform/i, /infrastructure/i,
+  /data\s+engineer/i, /data\s+scientist/i, /analytics\s+engineer/i,
+  /security\s+engineer/i, /cloud\s+engineer/i, /embedded/i,
+  /mobile/i, /android/i, /ios\s+engineer/i, /firmware/i,
+  /compiler/i, /\bvp\s+of\s+engineering\b/i, /\bcto\b/i,
+  /engineering\s+manager/i, /staff\s+engineer/i, /principal\s+engineer/i,
 ];
 
 function countKeywordHits(text: string, category: KeywordCategory): number {
@@ -53,7 +97,9 @@ function countKeywordHits(text: string, category: KeywordCategory): number {
 }
 
 export function isExcludedTitle(title: string): boolean {
-  return EXCLUDED_TITLES.some((re) => re.test(title));
+  if (EXCLUDED_TITLES.some((re) => re.test(title))) return true;
+  // Require at least one technical pattern in the title
+  return !TECHNICAL_TITLE_PATTERNS.some((re) => re.test(title));
 }
 
 export function classify(
