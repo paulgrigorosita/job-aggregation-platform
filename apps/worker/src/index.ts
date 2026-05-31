@@ -4,11 +4,17 @@ import { createScrapeWorker } from './workers/scrapeWorker.js';
 import { createEmbedWorker } from './workers/embedWorker.js';
 import { createAlertWorker } from './workers/alertWorker.js';
 import { initScheduler } from './scheduler.js';
+import { discoverGreenhouseCompanies } from '@jap/scrapers';
 
 const logger = createLogger('worker:main');
 
 async function main() {
   logger.info('Starting job aggregation workers');
+
+  // Discover new Greenhouse companies before first scrape
+  discoverGreenhouseCompanies().catch((err) =>
+    logger.warn({ err }, 'Greenhouse discovery failed')
+  );
 
   // Initialize the cron scheduler
   await initScheduler();

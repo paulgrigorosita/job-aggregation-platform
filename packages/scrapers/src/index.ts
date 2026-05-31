@@ -1,4 +1,5 @@
 export { GreenhouseScraper } from './greenhouse/index.js';
+export { discoverGreenhouseCompanies } from './greenhouse/discovery.js';
 export { LeverScraper } from './lever/index.js';
 export { AshbyScraper } from './ashby/index.js';
 export { YCScraper } from './yc/index.js';
