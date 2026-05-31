@@ -83,6 +83,13 @@ export class WellfoundScraper extends BaseScraper {
         await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
       }
 
+      // Debug: capture screenshot to see what the browser actually loaded
+      if (intercepted.length === 0) {
+        const screenshotPath = `/tmp/wellfound-debug-${Date.now()}.png`;
+        await page.screenshot({ path: screenshotPath, fullPage: false });
+        this.logger.warn({ screenshotPath }, 'Wellfound intercepted 0 jobs — screenshot saved for debugging');
+      }
+
       results.push(...intercepted);
       this.logger.debug({ count: results.length }, 'Wellfound jobs collected');
     } catch (err: unknown) {

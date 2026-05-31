@@ -11,6 +11,7 @@ interface LeverPosting {
     commitment?: string;
     department?: string;
     team?: string;
+    workplaceType?: string;
   };
   description: string;
   descriptionPlain: string;
@@ -68,8 +69,16 @@ export class LeverScraper extends BaseScraper {
       const response = await this.http.get<LeverResponse>(nextUrl);
       const postings = Array.isArray(response) ? (response as LeverPosting[]) : response.data;
 
+      // Log first posting's location fields to debug filtering
+      if (postings?.length && results.length === 0) {
+        this.logger.debug({ sample: { location: postings[0].categories?.location, workplaceType: postings[0].categories?.workplaceType } }, 'Lever location sample');
+      }
+
       for (const posting of postings ?? []) {
-        const { location, remote } = normalizeLocation(posting.categories?.location ?? '');
+        const workplaceType = posting.categories?.workplaceType ?? '';
+        const isRemote = /remote/i.test(workplaceType) || /remote/i.test(posting.categories?.location ?? '');
+        const rawLocation = isRemote ? 'Remote' : (posting.categories?.location ?? '');
+        const { location, remote } = normalizeLocation(rawLocation);
         const fullHtml = [posting.description, ...(posting.lists ?? []).map((l) => l.content), posting.additional].join('\n');
         const urlHash = hashUrl(posting.hostedUrl);
 

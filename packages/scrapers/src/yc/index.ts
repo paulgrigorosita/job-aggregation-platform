@@ -87,6 +87,13 @@ export class YCScraper extends BaseScraper {
         await new Promise((r) => setTimeout(r, 2500));
       }
 
+      // Debug: capture screenshot if nothing was intercepted
+      if (results.length === 0) {
+        const screenshotPath = `/tmp/yc-debug-${Date.now()}.png`;
+        await page.screenshot({ path: screenshotPath, fullPage: false });
+        this.logger.warn({ screenshotPath }, 'YC intercepted 0 jobs — screenshot saved for debugging');
+      }
+
       await context.close();
     } catch (err: unknown) {
       this.logger.error({ err: err instanceof Error ? err.message : String(err) }, 'YC Playwright scrape failed');
