@@ -73,12 +73,13 @@ export class WellfoundScraper extends BaseScraper {
       });
 
       await page.goto('https://wellfound.com/jobs?role=software-engineer&remote=true&location=United+States', {
-        waitUntil: 'networkidle',
+        waitUntil: 'domcontentloaded',
         timeout: 60_000,
       });
 
-      // Scroll to load more
-      for (let i = 0; i < 3; i++) {
+      // Wait for initial data then scroll
+      await new Promise((r) => setTimeout(r, 4000));
+      for (let i = 0; i < 4; i++) {
         await page.evaluate(() => window.scrollBy(0, window.innerHeight));
         await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
       }

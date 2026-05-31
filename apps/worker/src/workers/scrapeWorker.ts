@@ -26,6 +26,8 @@ export function createScrapeWorker() {
     {
       connection: createConnection(),
       concurrency: Number(process.env.WORKER_CONCURRENCY ?? 2),
+      lockDuration: 300_000, // 5 min — scrapers can run up to ~3 min
+      stalledInterval: 60_000,
       limiter: {
         max: 5,
         duration: 60_000,

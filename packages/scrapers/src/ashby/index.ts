@@ -40,9 +40,9 @@ export class AshbyScraper extends BaseScraper {
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status;
         const message = err instanceof Error ? err.message : String(err);
-        if (status === 401 || status === 404) {
+        if (status === 404) {
           await db.company.updateMany({ where: { atsSlug: atsSlug!, atsType: 'ashby' }, data: { atsType: null, atsSlug: null } });
-          this.logger.debug({ company: atsSlug, status }, 'Ashby board not accessible, removed from tracking');
+          this.logger.debug({ company: atsSlug }, 'Ashby board not found (404), removed from tracking');
         } else {
           this.logger.warn({ company: atsSlug, status, message }, 'Failed to scrape Ashby company');
         }

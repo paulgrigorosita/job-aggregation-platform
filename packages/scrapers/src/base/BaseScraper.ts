@@ -58,12 +58,13 @@ export abstract class BaseScraper {
         return !excluded;
       });
 
-      // Remote-only: exclude onsite and hybrid
+      // Remote-only: exclude explicitly onsite/hybrid jobs
       const relevantJobs = technicalJobs.filter((job) => {
         const loc = (job.location ?? '').toLowerCase();
-        const isOnsite = !job.remote && !/remote/i.test(loc);
-        if (isOnsite) stats.usFiltered++;
-        return !isOnsite;
+        const explicitlyOnsite = /\b(onsite|on-site|on site|hybrid)\b/i.test(loc) ||
+          /\b(onsite|on-site|on site|hybrid)\b/i.test(job.title);
+        if (explicitlyOnsite) stats.usFiltered++;
+        return !explicitlyOnsite;
       });
 
       this.logger.info(
