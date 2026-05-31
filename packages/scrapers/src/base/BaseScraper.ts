@@ -4,7 +4,9 @@ import { classify, extractTags, isExcludedTitle } from '../classifier/index.js';
 
 export abstract class BaseScraper {
   abstract readonly source: ScraperSource;
-  protected readonly logger = createLogger(`scraper:${this.source}`);
+  protected get logger() {
+    return createLogger(`scraper:${this.source}`);
+  }
 
   // Concrete scrapers implement only this — returns raw, unnormalized jobs
   protected abstract fetchAll(): Promise<NormalizedJob[]>;
