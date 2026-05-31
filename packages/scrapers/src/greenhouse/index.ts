@@ -22,6 +22,7 @@ interface GreenhouseResponse {
 
 export class GreenhouseScraper extends BaseScraper {
   readonly source = ScraperSource.GREENHOUSE;
+  protected readonly strictRemoteFilter = true;
   private readonly http = createHttpClient(process.env.PROXY_URL);
 
   private async getCompanies(): Promise<Array<{ name: string; atsSlug: string }>> {

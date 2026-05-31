@@ -4,6 +4,10 @@ import { classify, extractTags, isExcludedTitle } from '../classifier/index.js';
 
 export abstract class BaseScraper {
   abstract readonly source: ScraperSource;
+  // Set true in scrapers where the remote flag is reliable (Greenhouse, Ashby).
+  // False (default) uses a loose filter: only drops explicitly onsite/hybrid jobs.
+  protected readonly strictRemoteFilter: boolean = false;
+
   protected get logger() {
     return createLogger(`scraper:${this.source}`);
   }
@@ -58,8 +62,16 @@ export abstract class BaseScraper {
         return !excluded;
       });
 
-      // Remote-only: exclude explicitly onsite/hybrid jobs
+      // Remote filter
       const relevantJobs = technicalJobs.filter((job) => {
+        if (this.strictRemoteFilter) {
+          // Source has reliable remote data — only keep explicitly remote jobs
+          const isRemote = job.remote || /remote/i.test(job.location ?? '');
+          if (!isRemote) stats.usFiltered++;
+          return isRemote;
+        }
+        // Loose filter for sources with unreliable remote data (e.g. Lever):
+        // only drop jobs explicitly labeled onsite or hybrid
         const loc = (job.location ?? '').toLowerCase();
         const explicitlyOnsite = /\b(onsite|on-site|on site|hybrid)\b/i.test(loc) ||
           /\b(onsite|on-site|on site|hybrid)\b/i.test(job.title);

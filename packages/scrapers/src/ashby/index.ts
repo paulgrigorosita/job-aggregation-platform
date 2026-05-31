@@ -23,6 +23,7 @@ interface AshbyResponse {
 
 export class AshbyScraper extends BaseScraper {
   readonly source = ScraperSource.ASHBY;
+  protected readonly strictRemoteFilter = true;
   private readonly http = createHttpClient(process.env.PROXY_URL);
 
   protected async fetchAll(): Promise<NormalizedJob[]> {
