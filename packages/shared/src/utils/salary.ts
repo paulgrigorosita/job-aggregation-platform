@@ -12,7 +12,9 @@ export function parseSalary(raw: string | null | undefined): SalaryRange | null 
   let m: RegExpExecArray | null;
   while ((m = amountRe.exec(raw)) !== null) {
     const n = parseFloat(m[1].replace(/,/g, ''));
-    matches.push(m[2] ? n * 1000 : n);
+    const val = m[2] ? n * 1000 : n;
+    // Ignore values that can't be a real salary (IDs, timestamps, etc.)
+    if (val > 0 && val <= 10_000_000) matches.push(val);
   }
 
   if (matches.length === 0) return null;
