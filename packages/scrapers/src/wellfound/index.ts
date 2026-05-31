@@ -59,18 +59,20 @@ export class WellfoundScraper extends BaseScraper {
       const page = await context.newPage();
       const intercepted: NormalizedJob[] = [];
 
-      // Intercept GraphQL responses
+      // Intercept GraphQL and API responses
       page.on('response', async (response) => {
         const url = response.url();
-        if (!url.includes('/graphql') && !url.includes('/api/')) return;
+        if (!url.includes('wellfound.com') && !url.includes('angel.co')) return;
+        const ct = response.headers()['content-type'] ?? '';
+        if (!ct.includes('application/json')) return;
         try {
           const body = await response.json() as GraphQLResponse;
           const jobs = this.extractJobsFromGraphQL(body);
-          intercepted.push(...jobs);
+          if (jobs.length > 0) intercepted.push(...jobs);
         } catch {}
       });
 
-      await page.goto('https://wellfound.com/jobs?role=software-engineer&remote=true', {
+      await page.goto('https://wellfound.com/jobs?role=software-engineer&remote=true&location=United+States', {
         waitUntil: 'networkidle',
         timeout: 60_000,
       });

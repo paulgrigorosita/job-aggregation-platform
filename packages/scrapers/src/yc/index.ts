@@ -1,116 +1,99 @@
-import { ScraperSource, hashUrl, slugify, type NormalizedJob, createHttpClient } from '@jap/shared';
+import { chromium } from 'playwright';
+import { ScraperSource, hashUrl, slugify, type NormalizedJob, createLogger } from '@jap/shared';
 import { BaseScraper } from '../base/BaseScraper.js';
 import { normalizeTitle, normalizeDescription, normalizeLocation, normalizeDate } from '../normalizer/index.js';
-
-interface YCJob {
-  id: number;
-  title: string;
-  company_name: string;
-  company_slug: string;
-  locations: string[];
-  remote: boolean;
-  description: string;
-  url: string;
-  created_at: string;
-  ats_name?: string;
-  ats_job_url?: string;
-}
-
-interface YCResponse {
-  jobs: YCJob[];
-}
 
 const TECH_ROLES = [
   'engineer', 'developer', 'software', 'fullstack', 'backend', 'frontend',
   'ml', 'ai', 'machine learning', 'data', 'platform', 'infrastructure', 'devops',
-  'sre', 'architect', 'technical',
+  'sre', 'architect', 'technical', 'scientist',
 ];
 
 export class YCScraper extends BaseScraper {
   readonly source = ScraperSource.YC;
-  private readonly http = createHttpClient(process.env.PROXY_URL);
+  protected readonly logger = createLogger('scraper:yc');
 
   protected async fetchAll(): Promise<NormalizedJob[]> {
     const results: NormalizedJob[] = [];
+    let browser;
 
     try {
-      // YC Work at a Startup API
-      const url = 'https://www.workatastartup.com/company_filters?demographic=any&hasEquity=any&hasSalary=any&industry=any&interviewProcess=any&jobType=any&layout=list-compact&role=eng&sortBy=jobs&tab=any&usVisaNotRequired=any';
-
-      const response = await this.http.get<{ companies: Array<{ name: string; slug: string; jobs: Array<{ id: number; title: string; remote: boolean; description: string; country_codes?: string[]; created_at: string; job_url?: string }> }> }>(url, {
-        headers: { Accept: 'application/json', 'x-requested-with': 'XMLHttpRequest' },
+      browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        ...(process.env.PROXY_URL ? { proxy: { server: process.env.PROXY_URL } } : {}),
       });
 
-      const companies = response?.companies ?? [];
+      const context = await browser.newContext({
+        viewport: { width: 1440, height: 900 },
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        extraHTTPHeaders: {
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      });
 
-      for (const company of companies) {
-        for (const job of company.jobs ?? []) {
-          const titleLower = job.title.toLowerCase();
-          if (!TECH_ROLES.some((r) => titleLower.includes(r))) continue;
+      const page = await context.newPage();
 
-          const location = job.remote ? 'Remote' : (job.country_codes?.includes('US') ? 'United States' : '');
-          const applyUrl = job.job_url ?? `https://www.workatastartup.com/jobs/${job.id}`;
-          const urlHash = hashUrl(applyUrl);
-          const { location: loc, remote } = normalizeLocation(location);
+      // Intercept JSON API responses
+      page.on('response', async (response) => {
+        const url = response.url();
+        if (!url.includes('workatastartup.com')) return;
+        const ct = response.headers()['content-type'] ?? '';
+        if (!ct.includes('application/json')) return;
+        try {
+          const body = await response.json();
+          const companies: Array<{ name: string; slug: string; jobs: Array<{ id: number; title: string; remote: boolean; description: string; country_codes?: string[]; created_at: string; job_url?: string }> }> =
+            body?.companies ?? (Array.isArray(body) ? body : []);
 
-          results.push({
-            title: normalizeTitle(job.title),
-            companyName: company.name,
-            companySlug: slugify(company.slug ?? company.name),
-            location: loc,
-            remote,
-            salary: null,
-            applyUrl,
-            urlHash,
-            description: normalizeDescription(job.description ?? ''),
-            postedAt: normalizeDate(job.created_at),
-            source: this.source,
-            tags: [],
-            aiScore: 0,
-            classifierFlags: { isAI: false, isFullStack: false, isBackend: false, isFrontend: false },
-          });
-        }
+          for (const company of companies) {
+            for (const job of company.jobs ?? []) {
+              const titleLower = job.title.toLowerCase();
+              if (!TECH_ROLES.some((r) => titleLower.includes(r))) continue;
+
+              const location = job.remote ? 'Remote' : (job.country_codes?.includes('US') ? 'United States' : '');
+              const applyUrl = job.job_url ?? `https://www.workatastartup.com/jobs/${job.id}`;
+              const { location: loc, remote } = normalizeLocation(location);
+
+              results.push({
+                title: normalizeTitle(job.title),
+                companyName: company.name,
+                companySlug: slugify(company.slug ?? company.name),
+                location: loc,
+                remote,
+                salary: null,
+                applyUrl,
+                urlHash: hashUrl(applyUrl),
+                description: normalizeDescription(job.description ?? ''),
+                postedAt: normalizeDate(job.created_at),
+                source: this.source,
+                tags: [],
+                aiScore: 0,
+                classifierFlags: { isAI: false, isFullStack: false, isBackend: false, isFrontend: false },
+              });
+            }
+          }
+        } catch {}
+      });
+
+      // Load the page — this triggers the API calls
+      await page.goto(
+        'https://www.workatastartup.com/jobs?role=eng&remote=true',
+        { waitUntil: 'networkidle', timeout: 60_000 }
+      );
+
+      // Scroll to trigger lazy loads
+      for (let i = 0; i < 3; i++) {
+        await page.evaluate(() => window.scrollBy(0, window.innerHeight * 2));
+        await new Promise((r) => setTimeout(r, 2500));
       }
+
+      await context.close();
     } catch (err: unknown) {
-      this.logger.warn({ err }, 'YC API fetch failed, trying alternate endpoint');
-      // Fallback: scrape the jobs search page
-      const fallbackJobs = await this.fetchFallback();
-      results.push(...fallbackJobs);
+      this.logger.error({ err: err instanceof Error ? err.message : String(err) }, 'YC Playwright scrape failed');
+    } finally {
+      if (browser) await browser.close();
     }
 
     return results;
-  }
-
-  private async fetchFallback(): Promise<NormalizedJob[]> {
-    try {
-      const response = await this.http.get<YCResponse>(
-        'https://www.workatastartup.com/jobs?role=eng',
-        { headers: { Accept: 'application/json' } }
-      );
-
-      return (response.jobs ?? []).map((job) => {
-        const location = job.remote ? 'Remote' : job.locations?.[0] ?? '';
-        const { location: loc, remote } = normalizeLocation(location);
-        const applyUrl = job.ats_job_url ?? job.url ?? `https://www.workatastartup.com/jobs/${job.id}`;
-        return {
-          title: normalizeTitle(job.title),
-          companyName: job.company_name,
-          companySlug: slugify(job.company_slug ?? job.company_name),
-          location: loc,
-          remote,
-          salary: null,
-          applyUrl,
-          urlHash: hashUrl(applyUrl),
-          description: normalizeDescription(job.description ?? ''),
-          postedAt: normalizeDate(job.created_at),
-          source: this.source,
-          tags: [],
-          aiScore: 0,
-          classifierFlags: { isAI: false, isFullStack: false, isBackend: false, isFrontend: false },
-        };
-      });
-    } catch {
-      return [];
-    }
   }
 }
