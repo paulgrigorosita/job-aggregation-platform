@@ -38,7 +38,14 @@ export class AshbyScraper extends BaseScraper {
         results.push(...jobs);
         await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
       } catch (err: unknown) {
-        this.logger.warn({ company: atsSlug, err }, 'Failed to scrape Ashby company');
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        const message = err instanceof Error ? err.message : String(err);
+        if (status === 401 || status === 404) {
+          await db.company.updateMany({ where: { atsSlug: atsSlug!, atsType: 'ashby' }, data: { atsType: null, atsSlug: null } });
+          this.logger.debug({ company: atsSlug, status }, 'Ashby board not accessible, removed from tracking');
+        } else {
+          this.logger.warn({ company: atsSlug, status, message }, 'Failed to scrape Ashby company');
+        }
       }
     }
 

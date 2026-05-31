@@ -70,7 +70,15 @@ export class GreenhouseScraper extends BaseScraper {
         // Polite delay
         await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
       } catch (err: unknown) {
-        this.logger.warn({ company: slug, err }, 'Failed to scrape Greenhouse company');
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        const message = err instanceof Error ? err.message : String(err);
+        if (status === 404) {
+          // Company no longer on Greenhouse — clear ATS info to skip next time
+          await db.company.updateMany({ where: { atsSlug: slug, atsType: 'greenhouse' }, data: { atsType: null, atsSlug: null } });
+          this.logger.debug({ company: slug }, 'Greenhouse board not found (404), removed from tracking');
+        } else {
+          this.logger.warn({ company: slug, status, message }, 'Failed to scrape Greenhouse company');
+        }
       }
     }
 
