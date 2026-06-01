@@ -6,6 +6,8 @@ export { YCScraper } from './yc/index.js';
 export { WellfoundScraper } from './wellfound/index.js';
 export { RemotiveScraper } from './remotive/index.js';
 export { RemoteOKScraper } from './remoteok/index.js';
+export { JobicyScraper } from './jobicy/index.js';
+export { HimalayanScraper } from './himalayas/index.js';
 export { BaseScraper } from './base/BaseScraper.js';
 export { classify, extractTags, isExcludedTitle } from './classifier/index.js';
 export { normalizeTitle, normalizeDescription, normalizeLocation, normalizeDate } from './normalizer/index.js';
@@ -16,6 +18,8 @@ import { YCScraper } from './yc/index.js';
 import { WellfoundScraper } from './wellfound/index.js';
 import { RemotiveScraper } from './remotive/index.js';
 import { RemoteOKScraper } from './remoteok/index.js';
+import { JobicyScraper } from './jobicy/index.js';
+import { HimalayanScraper } from './himalayas/index.js';
 import { ScraperSource, type ScraperResult } from '@jap/shared';
 import { BaseScraper } from './base/BaseScraper.js';
 
@@ -28,6 +32,8 @@ export function scraperFactory(source: ScraperSource): BaseScraper {
     case ScraperSource.WELLFOUND: return new WellfoundScraper();
     case ScraperSource.REMOTIVE: return new RemotiveScraper();
     case ScraperSource.REMOTEOK: return new RemoteOKScraper();
+    case ScraperSource.JOBICY: return new JobicyScraper();
+    case ScraperSource.HIMALAYAS: return new HimalayanScraper();
   }
 }
 

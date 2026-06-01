@@ -13,6 +13,8 @@ const SCHEDULES: Array<{ source: ScraperSource; cron: string; description: strin
   { source: ScraperSource.WELLFOUND, cron: '0 6,18 * * *', description: 'Twice daily (Playwright is expensive)' },
   { source: ScraperSource.REMOTIVE, cron: '15 */2 * * *', description: 'Every 2 hours (offset 15m)' },
   { source: ScraperSource.REMOTEOK, cron: '45 */2 * * *', description: 'Every 2 hours (offset 45m)' },
+  { source: ScraperSource.JOBICY, cron: '20 */3 * * *', description: 'Every 3 hours' },
+  { source: ScraperSource.HIMALAYAS, cron: '50 */3 * * *', description: 'Every 3 hours (offset 50m)' },
 ];
 
 export async function initScheduler(): Promise<void> {

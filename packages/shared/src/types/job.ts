@@ -6,6 +6,8 @@ export enum ScraperSource {
   WELLFOUND = 'wellfound',
   REMOTIVE = 'remotive',
   REMOTEOK = 'remoteok',
+  JOBICY = 'jobicy',
+  HIMALAYAS = 'himalayas',
 }
 
 export interface SalaryRange {
