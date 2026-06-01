@@ -46,6 +46,12 @@ const US_ALLOWLIST_PATTERNS = [
   /\bus\s*[-\/]?\s*remote\b/i,
   /\bremote\s*[\(\-,]\s*north\s+america\b/i,
   /\bunited\s+states\s+of\s+america\b/i,
+  // Global/worldwide roles are acceptable for a US-focused remote platform
+  /\bworldwide\b/i,
+  /\bglobal\b/i,
+  /\banywhere\b/i,
+  /\binternational\b/i,
+  /\bremote\s*[-,]?\s*global\b/i,
 ];
 
 export function isUSRelevant(location: string): boolean {
