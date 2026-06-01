@@ -53,9 +53,12 @@ export function FilterBar({ filters, onFiltersChange }: Props) {
           <option value="">All sources</option>
           <option value="greenhouse">Greenhouse</option>
           <option value="lever">Lever</option>
-          <option value="ashby">Ashby</option>
           <option value="yc">YC Jobs</option>
-          <option value="wellfound">Wellfound</option>
+          <option value="weworkremotely">We Work Remotely</option>
+          <option value="remotive">Remotive</option>
+          <option value="remoteok">RemoteOK</option>
+          <option value="himalayas">Himalayas</option>
+          <option value="jobicy">Jobicy</option>
         </select>
 
         {/* Sort */}
