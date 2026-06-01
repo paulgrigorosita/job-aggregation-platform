@@ -8,13 +8,12 @@ const logger = createLogger('scheduler');
 const SCHEDULES: Array<{ source: ScraperSource; cron: string; description: string }> = [
   { source: ScraperSource.GREENHOUSE, cron: '0 */2 * * *', description: 'Every 2 hours' },
   { source: ScraperSource.LEVER, cron: '30 */2 * * *', description: 'Every 2 hours (offset 30m)' },
-  { source: ScraperSource.ASHBY, cron: '0 */3 * * *', description: 'Every 3 hours' },
   { source: ScraperSource.YC, cron: '0 */4 * * *', description: 'Every 4 hours' },
-  { source: ScraperSource.WELLFOUND, cron: '0 6,18 * * *', description: 'Twice daily (Playwright is expensive)' },
   { source: ScraperSource.REMOTIVE, cron: '15 */2 * * *', description: 'Every 2 hours (offset 15m)' },
   { source: ScraperSource.REMOTEOK, cron: '45 */2 * * *', description: 'Every 2 hours (offset 45m)' },
   { source: ScraperSource.JOBICY, cron: '20 */3 * * *', description: 'Every 3 hours' },
   { source: ScraperSource.HIMALAYAS, cron: '50 */3 * * *', description: 'Every 3 hours (offset 50m)' },
+  { source: ScraperSource.WEWORKREMOTELY, cron: '10 */2 * * *', description: 'Every 2 hours (offset 10m)' },
 ];
 
 export async function initScheduler(): Promise<void> {
