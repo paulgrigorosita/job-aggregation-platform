@@ -1,36 +1,15 @@
 export { GreenhouseScraper } from './greenhouse/index.js';
 export { discoverGreenhouseCompanies } from './greenhouse/discovery.js';
-export { LeverScraper } from './lever/index.js';
-export { YCScraper } from './yc/index.js';
-export { RemotiveScraper } from './remotive/index.js';
-export { RemoteOKScraper } from './remoteok/index.js';
-export { JobicyScraper } from './jobicy/index.js';
-export { HimalayanScraper } from './himalayas/index.js';
-export { WeWorkRemotelyScraper } from './weworkremotely/index.js';
 export { BaseScraper } from './base/BaseScraper.js';
 export { classify, extractTags, isExcludedTitle } from './classifier/index.js';
 export { normalizeTitle, normalizeDescription, normalizeLocation, normalizeDate } from './normalizer/index.js';
 import { GreenhouseScraper } from './greenhouse/index.js';
-import { LeverScraper } from './lever/index.js';
-import { YCScraper } from './yc/index.js';
-import { RemotiveScraper } from './remotive/index.js';
-import { RemoteOKScraper } from './remoteok/index.js';
-import { JobicyScraper } from './jobicy/index.js';
-import { HimalayanScraper } from './himalayas/index.js';
-import { WeWorkRemotelyScraper } from './weworkremotely/index.js';
 import { ScraperSource, type ScraperResult } from '@jap/shared';
 import { BaseScraper } from './base/BaseScraper.js';
 
 export function scraperFactory(source: ScraperSource): BaseScraper {
   switch (source) {
     case ScraperSource.GREENHOUSE: return new GreenhouseScraper();
-    case ScraperSource.LEVER: return new LeverScraper();
-    case ScraperSource.YC: return new YCScraper();
-    case ScraperSource.REMOTIVE: return new RemotiveScraper();
-    case ScraperSource.REMOTEOK: return new RemoteOKScraper();
-    case ScraperSource.JOBICY: return new JobicyScraper();
-    case ScraperSource.HIMALAYAS: return new HimalayanScraper();
-    case ScraperSource.WEWORKREMOTELY: return new WeWorkRemotelyScraper();
   }
 }
 

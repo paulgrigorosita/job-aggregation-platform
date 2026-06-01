@@ -1,12 +1,5 @@
 export enum ScraperSource {
   GREENHOUSE = 'greenhouse',
-  LEVER = 'lever',
-  YC = 'yc',
-  REMOTIVE = 'remotive',
-  REMOTEOK = 'remoteok',
-  JOBICY = 'jobicy',
-  HIMALAYAS = 'himalayas',
-  WEWORKREMOTELY = 'weworkremotely',
 }
 
 export interface SalaryRange {

@@ -44,23 +44,6 @@ export function FilterBar({ filters, onFiltersChange }: Props) {
           AI jobs only
         </label>
 
-        {/* Source filter */}
-        <select
-          value={filters.source ?? ''}
-          onChange={(e) => onFiltersChange({ source: e.target.value || undefined })}
-          className="text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-slate-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        >
-          <option value="">All sources</option>
-          <option value="greenhouse">Greenhouse</option>
-          <option value="lever">Lever</option>
-          <option value="yc">YC Jobs</option>
-          <option value="weworkremotely">We Work Remotely</option>
-          <option value="remotive">Remotive</option>
-          <option value="remoteok">RemoteOK</option>
-          <option value="himalayas">Himalayas</option>
-          <option value="jobicy">Jobicy</option>
-        </select>
-
         {/* Sort */}
         <select
           value={filters.sortBy ?? 'postedAt'}
