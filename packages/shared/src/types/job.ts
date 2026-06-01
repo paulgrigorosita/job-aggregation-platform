@@ -4,6 +4,8 @@ export enum ScraperSource {
   ASHBY = 'ashby',
   YC = 'yc',
   WELLFOUND = 'wellfound',
+  REMOTIVE = 'remotive',
+  REMOTEOK = 'remoteok',
 }
 
 export interface SalaryRange {

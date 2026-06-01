@@ -4,6 +4,8 @@ export { LeverScraper } from './lever/index.js';
 export { AshbyScraper } from './ashby/index.js';
 export { YCScraper } from './yc/index.js';
 export { WellfoundScraper } from './wellfound/index.js';
+export { RemotiveScraper } from './remotive/index.js';
+export { RemoteOKScraper } from './remoteok/index.js';
 export { BaseScraper } from './base/BaseScraper.js';
 export { classify, extractTags, isExcludedTitle } from './classifier/index.js';
 export { normalizeTitle, normalizeDescription, normalizeLocation, normalizeDate } from './normalizer/index.js';
@@ -12,6 +14,8 @@ import { LeverScraper } from './lever/index.js';
 import { AshbyScraper } from './ashby/index.js';
 import { YCScraper } from './yc/index.js';
 import { WellfoundScraper } from './wellfound/index.js';
+import { RemotiveScraper } from './remotive/index.js';
+import { RemoteOKScraper } from './remoteok/index.js';
 import { ScraperSource, type ScraperResult } from '@jap/shared';
 import { BaseScraper } from './base/BaseScraper.js';
 
@@ -22,6 +26,8 @@ export function scraperFactory(source: ScraperSource): BaseScraper {
     case ScraperSource.ASHBY: return new AshbyScraper();
     case ScraperSource.YC: return new YCScraper();
     case ScraperSource.WELLFOUND: return new WellfoundScraper();
+    case ScraperSource.REMOTIVE: return new RemotiveScraper();
+    case ScraperSource.REMOTEOK: return new RemoteOKScraper();
   }
 }
 
