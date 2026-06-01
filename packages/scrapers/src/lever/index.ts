@@ -32,6 +32,7 @@ interface LeverResponse {
 
 export class LeverScraper extends BaseScraper {
   readonly source = ScraperSource.LEVER;
+  protected readonly strictRemoteFilter = true;
   private readonly http = createHttpClient(process.env.PROXY_URL);
 
   protected async fetchAll(): Promise<NormalizedJob[]> {
