@@ -145,7 +145,8 @@ export async function rankNewJobs(): Promise<{ ranked: number; deactivated: numb
     // Persist scores and deactivate low-fit jobs
     for (const score of scores) {
       const isTop = topIds.has(score.jobId);
-      await db.job.update({
+      // updateMany silently skips if Claude returned a mismatched/hallucinated ID
+      const updated = await db.job.updateMany({
         where: { id: score.jobId },
         data: {
           fitScore: score.score,
@@ -153,8 +154,10 @@ export async function rankNewJobs(): Promise<{ ranked: number; deactivated: numb
           isActive: isTop,
         },
       });
-      ranked++;
-      if (!isTop) deactivated++;
+      if (updated.count > 0) {
+        ranked++;
+        if (!isTop) deactivated++;
+      }
     }
 
     logger.info(
