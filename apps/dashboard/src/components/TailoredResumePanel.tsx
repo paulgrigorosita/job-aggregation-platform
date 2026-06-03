@@ -127,7 +127,10 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
     .edu-duration { font-size: 9pt; color: #888; white-space: nowrap; margin-left: 12px; }
     @media print {
       body { padding: 24px 32px; }
-      @page { margin: 0; size: letter; }
+      @page { margin: 0.5in; size: letter; }
+      .role { page-break-inside: avoid; }
+      .project { page-break-inside: avoid; }
+      .edu-row { page-break-inside: avoid; }
     }
   </style>
 </head>
