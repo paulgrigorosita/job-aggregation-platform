@@ -9,7 +9,8 @@ const logger = createLogger('job-ranker');
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RESUME_PATH = join(__dirname, '../../config/resume.txt');
 const MAX_FITS_PER_COMPANY = 2;
-const BATCH_SIZE = 5; // jobs per Claude call to save tokens
+const BATCH_SIZE = 10; // jobs per Claude call
+const DESC_CHARS = 500; // chars of description to send — enough for requirements, not the whole post
 
 interface JobScore {
   jobId: string;
@@ -34,7 +35,7 @@ async function scoreJobsBatch(
   jobs: Array<{ id: string; title: string; company: string; description: string }>
 ): Promise<JobScore[]> {
   const jobsBlock = jobs
-    .map((j, i) => `### Job ${i + 1} (ID: ${j.id})\nTitle: ${j.title}\nCompany: ${j.company}\n\n${j.description.slice(0, 2000)}`)
+    .map((j, i) => `### Job ${i + 1} (ID: ${j.id})\nTitle: ${j.title}\nCompany: ${j.company}\n\n${j.description.slice(0, DESC_CHARS)}`)
     .join('\n\n---\n\n');
 
   const response = await client.messages.create({
