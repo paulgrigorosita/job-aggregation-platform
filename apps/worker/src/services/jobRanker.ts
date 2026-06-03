@@ -1,13 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 import { db } from '@jap/database';
 import { createLogger } from '@jap/shared';
 
 const logger = createLogger('job-ranker');
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const RESUME_PATH = join(__dirname, '../../config/resume.txt');
+// Resolve relative to the repo root (process.cwd() = project root when running via pnpm)
+const RESUME_PATH = join(process.cwd(), 'apps/worker/config/resume.txt');
 const MAX_FITS_PER_COMPANY = 2;
 const BATCH_SIZE = 10; // jobs per Claude call
 const DESC_CHARS = 500; // chars of description to send — enough for requirements, not the whole post
