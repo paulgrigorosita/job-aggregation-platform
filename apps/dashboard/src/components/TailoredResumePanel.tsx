@@ -173,10 +173,14 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
 </body>
 </html>`;
 
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    printWindow.location.href = url;
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      URL.revokeObjectURL(url);
+    };
   };
 
   const copyAsText = () => {
