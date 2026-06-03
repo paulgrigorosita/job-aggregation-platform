@@ -1,6 +1,14 @@
 import type { FastifyInstance } from 'fastify';
+import { Queue } from 'bullmq';
+import IORedis from 'ioredis';
 import { db } from '@jap/database';
 import { tailorResumeForJob, type ResumeProfile } from '../services/resumeTailor.js';
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore ioredis version phantom conflict between api and worker packages
+const applyQueue = new Queue('apply', {
+  connection: new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379', { maxRetriesPerRequest: null }),
+});
 
 export async function resumeRoutes(app: FastifyInstance) {
   // GET /resume — fetch the single base resume
@@ -78,6 +86,38 @@ export async function resumeRoutes(app: FastifyInstance) {
       await db.job.update({ where: { id: job.id }, data: { tailoredResume: tailored as object } });
 
       return reply.send(tailored);
+    },
+  });
+
+  // POST /jobs/:id/apply — queue an auto-apply job
+  app.post('/jobs/:id/apply', {
+    schema: { tags: ['resume'], summary: 'Auto-apply to a job via Puppeteer' },
+    async handler(request, reply) {
+      const { id } = request.params as { id: string };
+      const job = await db.job.findFirst({ where: { OR: [{ id }, { urlHash: id }] } });
+      if (!job) return reply.status(404).send({ error: 'Job not found' });
+      if (job.applicationStatus === 'APPLIED') {
+        return reply.status(409).send({ error: 'Already applied to this job' });
+      }
+
+      await db.job.update({ where: { id: job.id }, data: { applicationStatus: 'PENDING', applyError: null } });
+      await applyQueue.add('apply', { jobId: job.id });
+
+      return reply.status(202).send({ status: 'PENDING' });
+    },
+  });
+
+  // GET /jobs/:id/apply-status — check application status
+  app.get('/jobs/:id/apply-status', {
+    schema: { tags: ['resume'], summary: 'Get application status for a job' },
+    async handler(request, reply) {
+      const { id } = request.params as { id: string };
+      const job = await db.job.findFirst({
+        where: { OR: [{ id }, { urlHash: id }] },
+        select: { applicationStatus: true, appliedAt: true, applyError: true },
+      });
+      if (!job) return reply.status(404).send({ error: 'Job not found' });
+      return reply.send(job);
     },
   });
 

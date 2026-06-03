@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "puppeteer": "^22.0.0",
     "@jap/database": "workspace:*",
     "@jap/scrapers": "workspace:*",
     "@jap/shared": "workspace:*",

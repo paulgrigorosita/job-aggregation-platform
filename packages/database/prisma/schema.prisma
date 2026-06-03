@@ -52,8 +52,11 @@ model Job {
   isActive       Boolean   @default(true)
   fitScore       Int?      // 0-100 resume fit score from Claude (null = not yet ranked)
   fitReason      String?   @db.Text // brief explanation from Claude
-  tailoredResume Json?     // Claude-generated tailored resume JSON for this job
-  tags           JobTag[]
+  tailoredResume    Json?     // Claude-generated tailored resume JSON for this job
+  applicationStatus String?   // PENDING | APPLIED | FAILED
+  appliedAt         DateTime?
+  applyError        String?   @db.Text
+  tags              JobTag[]
 
   @@index([source])
   @@index([remote])

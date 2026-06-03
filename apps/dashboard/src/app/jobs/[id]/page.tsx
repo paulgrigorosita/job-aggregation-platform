@@ -84,7 +84,15 @@ export default async function JobPage({ params }: { params: { id: string } }) {
           Apply Now <ExternalLink size={16} />
         </a>
 
-        <TailoredResumePanel jobId={job.id} initial={job.tailoredResume} />
+        <TailoredResumePanel
+          jobId={job.id}
+          initial={job.tailoredResume}
+          initialApplyStatus={job.applicationStatus ? {
+            applicationStatus: job.applicationStatus as 'PENDING' | 'APPLIED' | 'FAILED',
+            appliedAt: job.appliedAt ?? null,
+            applyError: job.applyError ?? null,
+          } : null}
+        />
 
         {job.description && (
           <div className="mt-8 prose dark:prose-invert max-w-none">

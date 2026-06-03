@@ -17,9 +17,11 @@
     "@fastify/swagger-ui": "^4.0.0",
     "@jap/database": "workspace:*",
     "@jap/shared": "workspace:*",
+    "bullmq": "^5.8.0",
     "dotenv": "^16.4.0",
     "fast-xml-parser": "^4.4.0",
     "fastify": "^4.28.0",
+    "ioredis": "^5.3.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

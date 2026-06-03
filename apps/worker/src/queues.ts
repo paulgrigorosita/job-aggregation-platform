@@ -29,6 +29,11 @@ export const rankQueue = new Queue('rank', {
   defaultJobOptions: { ...DEFAULT_JOB_OPTIONS, attempts: 2 },
 });
 
+export const applyQueue = new Queue('apply', {
+  connection: createConnection(),
+  defaultJobOptions: { ...DEFAULT_JOB_OPTIONS, attempts: 1 },
+});
+
 export interface ScrapeJobData {
   source: ScraperSource;
 }

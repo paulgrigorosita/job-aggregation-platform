@@ -1,14 +1,42 @@
 'use client';
 
-import { useState } from 'react';
-import { tailorResume, type TailoredResume } from '@/lib/api';
-import { FileText, Loader2, Copy, Check, RefreshCw, Download } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { tailorResume, autoApply, fetchApplyStatus, type TailoredResume, type ApplyStatus } from '@/lib/api';
+import { FileText, Loader2, Copy, Check, RefreshCw, Download, Send, CheckCircle, XCircle } from 'lucide-react';
 
-export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial?: TailoredResume | null }) {
+export function TailoredResumePanel({
+  jobId,
+  initial,
+  initialApplyStatus,
+}: {
+  jobId: string;
+  initial?: TailoredResume | null;
+  initialApplyStatus?: ApplyStatus | null;
+}) {
   const [resume, setResume] = useState<TailoredResume | null>(initial ?? null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [applyStatus, setApplyStatus] = useState<ApplyStatus | null>(initialApplyStatus ?? null);
+  const [applying, setApplying] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll for apply status while PENDING
+  useEffect(() => {
+    if (applyStatus?.applicationStatus === 'PENDING') {
+      pollRef.current = setInterval(async () => {
+        try {
+          const s = await fetchApplyStatus(jobId);
+          setApplyStatus(s);
+          if (s.applicationStatus !== 'PENDING' && pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        } catch { /* ignore */ }
+      }, 3000);
+    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [applyStatus?.applicationStatus, jobId]);
 
   const generate = async () => {
     setLoading(true);
@@ -191,6 +219,19 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const triggerApply = async () => {
+    setApplying(true);
+    setError(null);
+    try {
+      await autoApply(jobId);
+      setApplyStatus({ applicationStatus: 'PENDING', appliedAt: null, applyError: null });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to queue application');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   return (
     <div className="mt-8 border-t border-slate-200 dark:border-slate-700 pt-8">
       <div className="flex items-center justify-between mb-4">
@@ -215,6 +256,33 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
                 </div>
               </div>
             </>
+          )}
+          {/* Auto Apply button + status */}
+          {applyStatus?.applicationStatus === 'APPLIED' ? (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg">
+              <CheckCircle size={14} />
+              Applied
+            </span>
+          ) : applyStatus?.applicationStatus === 'FAILED' ? (
+            <span title={applyStatus.applyError ?? ''} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg cursor-help">
+              <XCircle size={14} />
+              Apply failed
+            </span>
+          ) : applyStatus?.applicationStatus === 'PENDING' ? (
+            <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <Loader2 size={14} className="animate-spin" />
+              Applying…
+            </span>
+          ) : (
+            <button
+              onClick={triggerApply}
+              disabled={applying || !resume}
+              title={!resume ? 'Generate a tailored resume first' : 'Auto-fill and submit the Greenhouse application'}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+            >
+              {applying ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              {applying ? 'Queuing…' : 'Auto Apply'}
+            </button>
           )}
           <button
             onClick={generate}

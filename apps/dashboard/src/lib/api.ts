@@ -29,6 +29,9 @@ export interface Job {
   fitScore?: number | null;
   fitReason?: string | null;
   tailoredResume?: TailoredResume | null;
+  applicationStatus?: 'PENDING' | 'APPLIED' | 'FAILED' | null;
+  appliedAt?: string | null;
+  applyError?: string | null;
   company?: { name: string; slug: string; logoUrl?: string };
   tags?: Array<{ tag: string }>;
 }
@@ -128,3 +131,15 @@ export const tailorResume = (jobId: string) =>
 
 export const fetchTailoredResume = (jobId: string) =>
   apiFetch<TailoredResume | null>(`/jobs/${jobId}/tailor`);
+
+export interface ApplyStatus {
+  applicationStatus: 'PENDING' | 'APPLIED' | 'FAILED' | null;
+  appliedAt: string | null;
+  applyError: string | null;
+}
+
+export const autoApply = (jobId: string) =>
+  apiFetch<{ status: string }>(`/jobs/${jobId}/apply`, undefined, { method: 'POST' });
+
+export const fetchApplyStatus = (jobId: string) =>
+  apiFetch<ApplyStatus>(`/jobs/${jobId}/apply-status`);
