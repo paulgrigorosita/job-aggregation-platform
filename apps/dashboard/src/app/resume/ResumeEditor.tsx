@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { saveResume, type ResumeProfile, type WorkEntry } from '@/lib/api';
+import { saveResume, type ResumeProfile, type WorkEntry, type EducationEntry, type ProjectEntry } from '@/lib/api';
 import { Plus, Trash2, Save } from 'lucide-react';
 
 const EMPTY: ResumeProfile = {
@@ -10,6 +10,7 @@ const EMPTY: ResumeProfile = {
   phone: '+1 555 000 0000',
   linkedinUrl: 'https://www.linkedin.com/in/jane-example',
   githubUrl: 'https://github.com/paulgrigorosita',
+  portfolioUrl: 'https://example.com/',
   title: 'Senior Full Stack & AI Developer',
   summary: "Senior Full Stack Developer with 7+ years of experience building scalable SaaS platforms, AI-driven systems, and high-performance web applications. I use AI as a force multiplier across development, debugging, and optimization while keeping systems maintainable, reliable, and production-ready. Core stack: React, Next.js, React Native, Node.js, Python, TypeScript, PostgreSQL, Supabase, AWS, and modern AI tooling.",
   skills: [
@@ -70,6 +71,40 @@ const EMPTY: ResumeProfile = {
       ],
     },
   ],
+  education: [
+    {
+      institution: 'Arizona State University',
+      degree: "Master's Degree",
+      field: 'Computer Science — Distributed Systems & Scalable Applications',
+      duration: '2018 – 2020',
+    },
+    {
+      institution: 'Arizona State University',
+      degree: "Bachelor's Degree",
+      field: 'Computer Science',
+      duration: '2015 – 2018',
+    },
+  ],
+  projects: [
+    {
+      name: 'DroneVision',
+      url: '',
+      description: 'AI-powered search and rescue platform using computer vision and real-time drone feeds to locate missing persons.',
+      tech: ['Python', 'React', 'AWS', 'Computer Vision', 'FastAPI'],
+    },
+    {
+      name: 'FinanceAI',
+      url: '',
+      description: 'Data-driven financial dashboard with AI-powered insights, forecasting, and anomaly detection for portfolio management.',
+      tech: ['Next.js', 'TypeScript', 'PostgreSQL', 'LLM Integration', 'Node.js'],
+    },
+    {
+      name: 'TNT Cash & Logistics Operations Platform',
+      url: '',
+      description: 'High-volume cash and shipment workflow management system with role-based access, complex data imports, and real-time reporting.',
+      tech: ['Angular 18', 'Node.js', 'MongoDB', 'AWS', 'Redis'],
+    },
+  ],
 };
 
 export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
@@ -81,39 +116,53 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
   const set = (field: keyof ResumeProfile, value: unknown) =>
     setForm((f) => ({ ...f, [field]: value }));
 
+  // Skills
   const addSkill = () => {
     const s = skillInput.trim();
     if (s && !form.skills.includes(s)) set('skills', [...form.skills, s]);
     setSkillInput('');
   };
-
   const removeSkill = (s: string) => set('skills', form.skills.filter((x) => x !== s));
 
+  // Work history
   const addWork = () =>
-    set('workHistory', [
-      ...form.workHistory,
-      { company: '', duration: '', title: '', highlights: [''] },
-    ]);
-
+    set('workHistory', [...form.workHistory, { company: '', duration: '', title: '', highlights: [''] }]);
   const updateWork = (i: number, field: keyof WorkEntry, value: unknown) => {
     const wh = [...form.workHistory];
     wh[i] = { ...wh[i], [field]: value };
     set('workHistory', wh);
   };
-
-  const removeWork = (i: number) =>
-    set('workHistory', form.workHistory.filter((_, idx) => idx !== i));
-
+  const removeWork = (i: number) => set('workHistory', form.workHistory.filter((_, idx) => idx !== i));
   const addHighlight = (i: number) => updateWork(i, 'highlights', [...form.workHistory[i].highlights, '']);
-
   const updateHighlight = (wi: number, hi: number, val: string) => {
     const hl = [...form.workHistory[wi].highlights];
     hl[hi] = val;
     updateWork(wi, 'highlights', hl);
   };
-
   const removeHighlight = (wi: number, hi: number) =>
     updateWork(wi, 'highlights', form.workHistory[wi].highlights.filter((_, idx) => idx !== hi));
+
+  // Education
+  const addEducation = () =>
+    set('education', [...form.education, { institution: '', degree: '', field: '', duration: '' }]);
+  const updateEducation = (i: number, field: keyof EducationEntry, value: string) => {
+    const ed = [...form.education];
+    ed[i] = { ...ed[i], [field]: value };
+    set('education', ed);
+  };
+  const removeEducation = (i: number) => set('education', form.education.filter((_, idx) => idx !== i));
+
+  // Projects
+  const addProject = () =>
+    set('projects', [...form.projects, { name: '', url: '', description: '', tech: [] }]);
+  const updateProject = (i: number, field: keyof ProjectEntry, value: unknown) => {
+    const ps = [...form.projects];
+    ps[i] = { ...ps[i], [field]: value };
+    set('projects', ps);
+  };
+  const removeProject = (i: number) => set('projects', form.projects.filter((_, idx) => idx !== i));
+  const updateProjectTech = (pi: number, val: string) =>
+    updateProject(pi, 'tech', val.split(',').map((t) => t.trim()).filter(Boolean));
 
   const handleSave = async () => {
     setSaving(true);
@@ -128,42 +177,38 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
 
   const inputCls = 'w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500';
   const labelCls = 'block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1';
+  const sectionCls = 'bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700';
 
   return (
     <div className="space-y-6">
       {/* Personal Info */}
-      <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+      <section className={sectionCls}>
         <h2 className="font-semibold text-slate-900 dark:text-white mb-4">Personal Info</h2>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Full Name</label>
-            <input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Jane Smith" />
-          </div>
-          <div>
-            <label className={labelCls}>Professional Title</label>
-            <input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Full-Stack Engineer" />
-          </div>
-          <div>
-            <label className={labelCls}>Email</label>
-            <input className={inputCls} value={form.email ?? ''} onChange={(e) => set('email', e.target.value)} placeholder="jane@example.com" />
-          </div>
-          <div>
-            <label className={labelCls}>Phone</label>
-            <input className={inputCls} value={form.phone ?? ''} onChange={(e) => set('phone', e.target.value)} placeholder="+1 555 000 0000" />
-          </div>
-          <div>
-            <label className={labelCls}>LinkedIn URL</label>
-            <input className={inputCls} value={form.linkedinUrl ?? ''} onChange={(e) => set('linkedinUrl', e.target.value)} placeholder="https://linkedin.com/in/..." />
-          </div>
-          <div>
-            <label className={labelCls}>GitHub URL</label>
-            <input className={inputCls} value={form.githubUrl ?? ''} onChange={(e) => set('githubUrl', e.target.value)} placeholder="https://github.com/..." />
-          </div>
+          {[
+            { label: 'Full Name', field: 'name', placeholder: 'Jane Smith' },
+            { label: 'Professional Title', field: 'title', placeholder: 'Full-Stack Engineer' },
+            { label: 'Email', field: 'email', placeholder: 'jane@example.com' },
+            { label: 'Phone', field: 'phone', placeholder: '+1 555 000 0000' },
+            { label: 'LinkedIn URL', field: 'linkedinUrl', placeholder: 'https://linkedin.com/in/...' },
+            { label: 'GitHub URL', field: 'githubUrl', placeholder: 'https://github.com/...' },
+            { label: 'Portfolio URL', field: 'portfolioUrl', placeholder: 'https://yoursite.com' },
+          ].map(({ label, field, placeholder }) => (
+            <div key={field}>
+              <label className={labelCls}>{label}</label>
+              <input
+                className={inputCls}
+                value={(form[field as keyof ResumeProfile] as string) ?? ''}
+                onChange={(e) => set(field as keyof ResumeProfile, e.target.value)}
+                placeholder={placeholder}
+              />
+            </div>
+          ))}
         </div>
         <div className="mt-4">
           <label className={labelCls}>Summary</label>
           <textarea
-            className={inputCls + ' resize-none h-24'}
+            className={inputCls + ' resize-none h-28'}
             value={form.summary}
             onChange={(e) => set('summary', e.target.value)}
             placeholder="2-3 sentence professional summary..."
@@ -172,7 +217,7 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
       </section>
 
       {/* Skills */}
-      <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+      <section className={sectionCls}>
         <h2 className="font-semibold text-slate-900 dark:text-white mb-4">Skills</h2>
         <div className="flex gap-2 mb-3">
           <input
@@ -182,7 +227,7 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
             placeholder="Type a skill and press Enter"
           />
-          <button onClick={addSkill} className="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm">
+          <button onClick={addSkill} className="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg">
             <Plus size={16} />
           </button>
         </div>
@@ -197,7 +242,7 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
       </section>
 
       {/* Work History */}
-      <section className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+      <section className={sectionCls}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-slate-900 dark:text-white">Work History</h2>
           <button onClick={addWork} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-lg">
@@ -209,13 +254,11 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
             <div key={i} className="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
               <div className="flex justify-between items-start mb-3">
                 <span className="text-xs font-medium text-slate-400">Role {i + 1}</span>
-                <button onClick={() => removeWork(i)} className="text-slate-400 hover:text-red-500">
-                  <Trash2 size={14} />
-                </button>
+                <button onClick={() => removeWork(i)} className="text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className={labelCls}>Company <span className="text-violet-500">(locked — Claude won&apos;t change this)</span></label>
+                  <label className={labelCls}>Company <span className="text-violet-500">(locked — Claude won&apos;t change)</span></label>
                   <input className={inputCls} value={w.company} onChange={(e) => updateWork(i, 'company', e.target.value)} placeholder="Acme Corp" />
                 </div>
                 <div>
@@ -232,15 +275,8 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
                 <div className="space-y-2">
                   {w.highlights.map((h, hi) => (
                     <div key={hi} className="flex gap-2">
-                      <input
-                        className={inputCls}
-                        value={h}
-                        onChange={(e) => updateHighlight(i, hi, e.target.value)}
-                        placeholder="Led migration of monolith to microservices..."
-                      />
-                      <button onClick={() => removeHighlight(i, hi)} className="text-slate-400 hover:text-red-500">
-                        <Trash2 size={14} />
-                      </button>
+                      <input className={inputCls} value={h} onChange={(e) => updateHighlight(i, hi, e.target.value)} placeholder="Led migration to microservices..." />
+                      <button onClick={() => removeHighlight(i, hi)} className="text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
                     </div>
                   ))}
                   <button onClick={() => addHighlight(i)} className="text-xs text-brand-600 hover:underline flex items-center gap-1">
@@ -253,8 +289,84 @@ export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
         </div>
       </section>
 
+      {/* Education */}
+      <section className={sectionCls}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-slate-900 dark:text-white">Education</h2>
+          <button onClick={addEducation} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-lg">
+            <Plus size={14} /> Add
+          </button>
+        </div>
+        <div className="space-y-4">
+          {form.education.map((ed, i) => (
+            <div key={i} className="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
+              <div className="flex justify-between mb-3">
+                <span className="text-xs font-medium text-slate-400">Entry {i + 1}</span>
+                <button onClick={() => removeEducation(i)} className="text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Institution</label>
+                  <input className={inputCls} value={ed.institution} onChange={(e) => updateEducation(i, 'institution', e.target.value)} placeholder="Arizona State University" />
+                </div>
+                <div>
+                  <label className={labelCls}>Duration</label>
+                  <input className={inputCls} value={ed.duration} onChange={(e) => updateEducation(i, 'duration', e.target.value)} placeholder="2018 – 2020" />
+                </div>
+                <div>
+                  <label className={labelCls}>Degree</label>
+                  <input className={inputCls} value={ed.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)} placeholder="Master's Degree" />
+                </div>
+                <div>
+                  <label className={labelCls}>Field of Study</label>
+                  <input className={inputCls} value={ed.field} onChange={(e) => updateEducation(i, 'field', e.target.value)} placeholder="Computer Science" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Projects */}
+      <section className={sectionCls}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-slate-900 dark:text-white">Projects</h2>
+          <button onClick={addProject} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-brand-600 hover:bg-brand-700 text-white rounded-lg">
+            <Plus size={14} /> Add Project
+          </button>
+        </div>
+        <div className="space-y-4">
+          {form.projects.map((p, i) => (
+            <div key={i} className="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
+              <div className="flex justify-between mb-3">
+                <span className="text-xs font-medium text-slate-400">Project {i + 1}</span>
+                <button onClick={() => removeProject(i)} className="text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Project Name</label>
+                  <input className={inputCls} value={p.name} onChange={(e) => updateProject(i, 'name', e.target.value)} placeholder="DroneVision" />
+                </div>
+                <div>
+                  <label className={labelCls}>URL (optional)</label>
+                  <input className={inputCls} value={p.url ?? ''} onChange={(e) => updateProject(i, 'url', e.target.value)} placeholder="https://github.com/..." />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>Description</label>
+                  <textarea className={inputCls + ' resize-none h-16'} value={p.description} onChange={(e) => updateProject(i, 'description', e.target.value)} placeholder="What it does and why it matters..." />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>Tech Stack (comma separated)</label>
+                  <input className={inputCls} value={p.tech.join(', ')} onChange={(e) => updateProjectTech(i, e.target.value)} placeholder="React, Python, AWS" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Save */}
-      <div className="flex justify-end">
+      <div className="flex justify-end pb-8">
         <button
           onClick={handleSave}
           disabled={saving}

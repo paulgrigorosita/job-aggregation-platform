@@ -123,6 +123,47 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
               ))}
             </div>
           </div>
+
+          {/* Projects */}
+          {resume.projects && resume.projects.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Projects</h4>
+              <div className="space-y-3">
+                {resume.projects.map((p, i) => (
+                  <div key={i}>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-semibold text-slate-900 dark:text-white">{p.name}</span>
+                      {p.url && <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-500 underline">link</a>}
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">{p.description}</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {p.tech.map((t) => (
+                        <span key={t} className="px-1.5 py-0.5 text-xs rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Education */}
+          {resume.education && resume.education.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Education</h4>
+              <div className="space-y-2">
+                {resume.education.map((ed, i) => (
+                  <div key={i} className="flex items-baseline justify-between">
+                    <div>
+                      <span className="font-semibold text-slate-900 dark:text-white">{ed.institution}</span>
+                      <p className="text-xs text-slate-500">{ed.degree} · {ed.field}</p>
+                    </div>
+                    <span className="text-xs text-slate-400 shrink-0 ml-4">{ed.duration}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -133,7 +174,7 @@ function formatResumeAsText(r: TailoredResume): string {
   const lines: string[] = [
     r.name,
     r.title,
-    [r.email, r.phone, r.linkedinUrl, r.githubUrl].filter(Boolean).join(' | '),
+    [r.email, r.phone, r.linkedinUrl, r.githubUrl, r.portfolioUrl].filter(Boolean).join(' | '),
     '',
     'SUMMARY',
     r.summary,
@@ -147,6 +188,21 @@ function formatResumeAsText(r: TailoredResume): string {
     lines.push(`${w.company} — ${w.title} (${w.duration})`);
     for (const h of w.highlights) lines.push(`  • ${h}`);
     lines.push('');
+  }
+  if (r.projects?.length) {
+    lines.push('PROJECTS');
+    for (const p of r.projects) {
+      lines.push(`${p.name}${p.url ? ` (${p.url})` : ''}`);
+      lines.push(`  ${p.description}`);
+      lines.push(`  Tech: ${p.tech.join(', ')}`);
+      lines.push('');
+    }
+  }
+  if (r.education?.length) {
+    lines.push('EDUCATION');
+    for (const ed of r.education) {
+      lines.push(`${ed.institution} — ${ed.degree}, ${ed.field} (${ed.duration})`);
+    }
   }
   return lines.join('\n');
 }

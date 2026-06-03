@@ -20,14 +20,17 @@ export async function resumeRoutes(app: FastifyInstance) {
 
       const existing = await db.resume.findFirst({ orderBy: { createdAt: 'desc' } });
 
+      const data = {
+        ...body,
+        skills: body.skills,
+        workHistory: body.workHistory as object[],
+        education: (body.education ?? []) as object[],
+        projects: (body.projects ?? []) as object[],
+      };
+
       const resume = existing
-        ? await db.resume.update({
-            where: { id: existing.id },
-            data: { ...body, skills: body.skills, workHistory: body.workHistory as object[] },
-          })
-        : await db.resume.create({
-            data: { ...body, skills: body.skills, workHistory: body.workHistory as object[] },
-          });
+        ? await db.resume.update({ where: { id: existing.id }, data })
+        : await db.resume.create({ data });
 
       return reply.send(resume);
     },
@@ -57,10 +60,13 @@ export async function resumeRoutes(app: FastifyInstance) {
         phone: baseResume.phone,
         linkedinUrl: baseResume.linkedinUrl,
         githubUrl: baseResume.githubUrl,
+        portfolioUrl: baseResume.portfolioUrl,
         title: baseResume.title,
         summary: baseResume.summary,
         skills: baseResume.skills as string[],
         workHistory: baseResume.workHistory as ResumeProfile['workHistory'],
+        education: (baseResume.education ?? []) as ResumeProfile['education'],
+        projects: (baseResume.projects ?? []) as ResumeProfile['projects'],
       };
 
       const tailored = await tailorResumeForJob(base, {

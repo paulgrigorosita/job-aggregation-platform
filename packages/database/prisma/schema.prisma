@@ -80,13 +80,16 @@ model Resume {
   name        String
   email       String?
   phone       String?
-  linkedinUrl String?
-  githubUrl   String?
-  title       String   // base title e.g. "Full-Stack Engineer"
-  summary     String   @db.Text
-  skills      Json     // string[]
-  workHistory Json     // WorkEntry[]
-  createdAt   DateTime @default(now())
+  linkedinUrl  String?
+  githubUrl    String?
+  portfolioUrl String?
+  title        String   // base title e.g. "Full-Stack Engineer"
+  summary      String   @db.Text
+  skills       Json     // string[]
+  workHistory  Json     // WorkEntry[]
+  education    Json     @default("[]") // EducationEntry[]
+  projects     Json     @default("[]") // ProjectEntry[]
+  createdAt    DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("resumes")

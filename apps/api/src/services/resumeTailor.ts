@@ -7,16 +7,33 @@ export interface WorkEntry {
   highlights: string[];
 }
 
+export interface EducationEntry {
+  institution: string;
+  degree: string;
+  field: string;
+  duration: string;
+}
+
+export interface ProjectEntry {
+  name: string;
+  url?: string;
+  description: string;
+  tech: string[];
+}
+
 export interface ResumeProfile {
   name: string;
   email?: string | null;
   phone?: string | null;
   linkedinUrl?: string | null;
   githubUrl?: string | null;
+  portfolioUrl?: string | null;
   title: string;
   summary: string;
   skills: string[];
   workHistory: WorkEntry[];
+  education: EducationEntry[];
+  projects: ProjectEntry[];
 }
 
 export interface TailoredResume extends ResumeProfile {
@@ -53,6 +70,7 @@ Return the tailored resume in exactly this JSON structure:
   "phone": "...",
   "linkedinUrl": "...",
   "githubUrl": "...",
+  "portfolioUrl": "...",
   "title": "adjusted title matching the job",
   "summary": "2-3 sentence summary tailored to this role",
   "skills": ["most relevant first", ...],
@@ -63,7 +81,9 @@ Return the tailored resume in exactly this JSON structure:
       "title": "adjusted title for this role",
       "highlights": ["tailored bullet 1", "tailored bullet 2"]
     }
-  ]
+  ],
+  "education": "<copy exactly from base, do not change>",
+  "projects": "<select 1-3 most relevant projects from base, copy fields exactly>"
 }`;
 
   const response = await client.messages.create({
@@ -84,6 +104,11 @@ Return the tailored resume in exactly this JSON structure:
     company: base.workHistory[i]?.company ?? entry.company,
     duration: base.workHistory[i]?.duration ?? entry.duration,
   }));
+
+  // Enforce: education always copied exactly from base
+  tailored.education = base.education;
+  // Enforce: portfolioUrl from base
+  tailored.portfolioUrl = base.portfolioUrl;
 
   return tailored;
 }

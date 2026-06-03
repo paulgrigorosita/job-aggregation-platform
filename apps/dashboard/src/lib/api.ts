@@ -40,6 +40,20 @@ export interface WorkEntry {
   highlights: string[];
 }
 
+export interface EducationEntry {
+  institution: string;
+  degree: string;
+  field: string;
+  duration: string;
+}
+
+export interface ProjectEntry {
+  name: string;
+  url?: string;
+  description: string;
+  tech: string[];
+}
+
 export interface ResumeProfile {
   id?: string;
   name: string;
@@ -47,10 +61,13 @@ export interface ResumeProfile {
   phone?: string | null;
   linkedinUrl?: string | null;
   githubUrl?: string | null;
+  portfolioUrl?: string | null;
   title: string;
   summary: string;
   skills: string[];
   workHistory: WorkEntry[];
+  education: EducationEntry[];
+  projects: ProjectEntry[];
 }
 
 export type TailoredResume = ResumeProfile;
