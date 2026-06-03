@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { tailorResume, type TailoredResume } from '@/lib/api';
 import { FileText, Loader2, Copy, Check, RefreshCw, Download } from 'lucide-react';
 
@@ -9,7 +9,6 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const generate = async () => {
     setLoading(true);
@@ -25,43 +24,137 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
   };
 
   const downloadPDF = () => {
-    if (!printRef.current || !resume) return;
+    if (!resume) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-    printWindow.document.write(`<!DOCTYPE html><html><head>
-<meta charset="utf-8"/>
-<title>${resume.name} — Resume</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; line-height: 1.5; color: #111; padding: 32px 40px; max-width: 780px; margin: 0 auto; }
-  h1 { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
-  .subtitle { font-size: 13px; color: #5b21b6; font-weight: 600; margin-bottom: 4px; }
-  .contact { font-size: 10px; color: #555; margin-bottom: 16px; }
-  .contact a { color: #5b21b6; text-decoration: none; }
-  .section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; margin: 14px 0 6px; }
-  .summary { color: #333; margin-bottom: 4px; }
-  .skills { display: flex; flex-wrap: wrap; gap: 4px; }
-  .skill { background: #f3f0ff; color: #5b21b6; padding: 1px 7px; border-radius: 9999px; font-size: 10px; }
-  .role { margin-bottom: 10px; }
-  .role-header { display: flex; justify-content: space-between; align-items: baseline; }
-  .role-company { font-weight: 700; }
-  .role-duration { font-size: 10px; color: #888; }
-  .role-title { font-size: 10px; color: #5b21b6; font-weight: 600; margin-bottom: 3px; }
-  ul { padding-left: 12px; }
-  li { margin-bottom: 1px; color: #333; }
-  .project { margin-bottom: 8px; }
-  .project-name { font-weight: 600; }
-  .project-desc { color: #555; font-size: 10px; }
-  .project-tech { font-size: 9px; color: #888; margin-top: 1px; }
-  .edu-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-  .edu-inst { font-weight: 600; }
-  .edu-detail { font-size: 10px; color: #555; }
-  @media print { body { padding: 20px 28px; } }
-</style>
-</head><body>${printRef.current.innerHTML}</body></html>`);
+
+    const contact = [
+      resume.email,
+      resume.phone,
+      resume.linkedinUrl ? `<a href="${resume.linkedinUrl}">LinkedIn</a>` : null,
+      resume.githubUrl ? `<a href="${resume.githubUrl}">GitHub</a>` : null,
+      resume.portfolioUrl ? `<a href="${resume.portfolioUrl}">Portfolio</a>` : null,
+    ].filter(Boolean).join(' &nbsp;&bull;&nbsp; ');
+
+    const workHTML = resume.workHistory.map(w => `
+      <div class="role">
+        <div class="role-header">
+          <span class="role-company">${w.company}</span>
+          <span class="role-duration">${w.duration}</span>
+        </div>
+        <div class="role-title">${w.title}</div>
+        <ul>${w.highlights.map(h => `<li>${h}</li>`).join('')}</ul>
+      </div>`).join('');
+
+    const projectsHTML = resume.projects?.length ? `
+      <div class="section-title">Projects</div>
+      ${resume.projects.map(p => `
+        <div class="project">
+          <span class="project-name">${p.name}</span>${p.url ? ` &mdash; <a href="${p.url}" class="link">${p.url}</a>` : ''}
+          <div class="project-desc">${p.description}</div>
+          <div class="project-tech">${p.tech.join(' &middot; ')}</div>
+        </div>`).join('')}` : '';
+
+    const educationHTML = resume.education?.length ? `
+      <div class="section-title">Education</div>
+      ${resume.education.map(ed => `
+        <div class="edu-row">
+          <div>
+            <div class="edu-inst">${ed.institution}</div>
+            <div class="edu-detail">${ed.degree} &mdash; ${ed.field}</div>
+          </div>
+          <div class="edu-duration">${ed.duration}</div>
+        </div>`).join('')}` : '';
+
+    const skillsHTML = resume.skills.map(s => `<span class="skill">${s}</span>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>${resume.name} — Resume</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.55;
+      color: #1a1a1a;
+      padding: 36px 44px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 24pt; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 3px; }
+    .title { font-size: 12pt; color: #5b21b6; font-weight: 600; margin-bottom: 6px; }
+    .contact { font-size: 9pt; color: #555; margin-bottom: 18px; }
+    .contact a { color: #5b21b6; text-decoration: none; }
+    .divider { border: none; border-top: 1.5px solid #e5e7eb; margin: 0 0 14px; }
+    .section-title {
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6b7280;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 3px;
+      margin: 16px 0 8px;
+    }
+    .summary { color: #333; font-size: 10pt; line-height: 1.6; }
+    .skills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .skill {
+      background: #f3f0ff;
+      color: #5b21b6;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 9pt;
+      font-weight: 500;
+    }
+    .role { margin-bottom: 12px; }
+    .role-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1px; }
+    .role-company { font-weight: 700; font-size: 10.5pt; }
+    .role-duration { font-size: 9pt; color: #888; }
+    .role-title { font-size: 9.5pt; color: #5b21b6; font-weight: 600; margin-bottom: 4px; }
+    ul { padding-left: 14px; }
+    li { margin-bottom: 2px; color: #333; font-size: 10pt; }
+    .project { margin-bottom: 10px; }
+    .project-name { font-weight: 700; font-size: 10.5pt; }
+    .link { color: #5b21b6; font-size: 9pt; text-decoration: none; }
+    .project-desc { color: #444; font-size: 9.5pt; margin-top: 2px; }
+    .project-tech { font-size: 9pt; color: #888; margin-top: 2px; }
+    .edu-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .edu-inst { font-weight: 700; font-size: 10.5pt; }
+    .edu-detail { font-size: 9.5pt; color: #555; margin-top: 1px; }
+    .edu-duration { font-size: 9pt; color: #888; white-space: nowrap; margin-left: 12px; }
+    @media print {
+      body { padding: 24px 32px; }
+      @page { margin: 0; size: letter; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${resume.name}</h1>
+  <div class="title">${resume.title}</div>
+  <div class="contact">${contact}</div>
+  <hr class="divider"/>
+
+  <div class="section-title">Summary</div>
+  <div class="summary">${resume.summary}</div>
+
+  <div class="section-title">Skills</div>
+  <div class="skills">${skillsHTML}</div>
+
+  <div class="section-title">Work History</div>
+  ${workHTML}
+
+  ${projectsHTML}
+  ${educationHTML}
+</body>
+</html>`;
+
+    printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
 
   const copyAsText = () => {
@@ -117,28 +210,6 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
 
       {resume && (
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-6 space-y-5 text-sm">
-          {/* Hidden print-ready version */}
-          <div ref={printRef} style={{ display: 'none' }}>
-            <h1>{resume.name}</h1>
-            <div className="subtitle">{resume.title}</div>
-            <div className="contact">
-              {[resume.email, resume.phone, resume.linkedinUrl && `<a href="${resume.linkedinUrl}">LinkedIn</a>`, resume.githubUrl && `<a href="${resume.githubUrl}">GitHub</a>`, resume.portfolioUrl && `<a href="${resume.portfolioUrl}">Portfolio</a>`].filter(Boolean).join(' &nbsp;|&nbsp; ')}
-            </div>
-            <div className="section-title">Summary</div>
-            <div className="summary">{resume.summary}</div>
-            <div className="section-title">Skills</div>
-            <div className="skills">{resume.skills.map(s => `<span class="skill">${s}</span>`).join('')}</div>
-            <div className="section-title">Work History</div>
-            {resume.workHistory.map(w => `
-              <div class="role">
-                <div class="role-header"><span class="role-company">${w.company}</span><span class="role-duration">${w.duration}</span></div>
-                <div class="role-title">${w.title}</div>
-                <ul>${w.highlights.map(h => `<li>${h}</li>`).join('')}</ul>
-              </div>`).join('')}
-            {resume.projects?.length ? `<div class="section-title">Projects</div>${resume.projects.map(p => `<div class="project"><span class="project-name">${p.name}</span>${p.url ? ` — <a href="${p.url}">${p.url}</a>` : ''}<div class="project-desc">${p.description}</div><div class="project-tech">${p.tech.join(', ')}</div></div>`).join('')}` : ''}
-            {resume.education?.length ? `<div class="section-title">Education</div>${resume.education.map(ed => `<div class="edu-row"><div><div class="edu-inst">${ed.institution}</div><div class="edu-detail">${ed.degree} · ${ed.field}</div></div><div class="edu-detail">${ed.duration}</div></div>`).join('')}` : ''}
-          </div>
-
           {/* Header */}
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">{resume.name}</h3>
@@ -163,9 +234,7 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Skills</h4>
             <div className="flex flex-wrap gap-1.5">
               {resume.skills.map((s) => (
-                <span key={s} className="px-2 py-0.5 text-xs rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300">
-                  {s}
-                </span>
+                <span key={s} className="px-2 py-0.5 text-xs rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300">{s}</span>
               ))}
             </div>
           </div>
@@ -184,8 +253,7 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
                   <ul className="space-y-1">
                     {w.highlights.map((h, hi) => (
                       <li key={hi} className="text-slate-600 dark:text-slate-400 flex gap-2">
-                        <span className="text-slate-300 shrink-0">•</span>
-                        {h}
+                        <span className="text-slate-300 shrink-0">•</span>{h}
                       </li>
                     ))}
                   </ul>
