@@ -26,6 +26,8 @@ export interface Job {
   isBackend: boolean;
   isFrontend: boolean;
   firstSeenAt: string;
+  fitScore?: number | null;
+  fitReason?: string | null;
   company?: { name: string; slug: string; logoUrl?: string };
   tags?: Array<{ tag: string }>;
 }
@@ -39,6 +41,7 @@ export interface JobFilters {
   isFullStack?: boolean;
   isBackend?: boolean;
   isFrontend?: boolean;
+  bestFit?: boolean;
   tags?: string;
   salaryMin?: number;
   page?: number;

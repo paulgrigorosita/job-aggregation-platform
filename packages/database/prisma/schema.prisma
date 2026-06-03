@@ -50,6 +50,8 @@ model Job {
   firstSeenAt    DateTime  @default(now())
   lastSeenAt     DateTime  @default(now())
   isActive       Boolean   @default(true)
+  fitScore       Int?      // 0-100 resume fit score from Claude (null = not yet ranked)
+  fitReason      String?   @db.Text // brief explanation from Claude
   tags           JobTag[]
 
   @@index([source])

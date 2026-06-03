@@ -33,8 +33,19 @@ export function FilterBar({ filters, onFiltersChange }: Props) {
           />
         </div>
 
+        {/* Best fit toggle */}
+        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={filters.bestFit === true}
+            onChange={(e) => onFiltersChange({ bestFit: e.target.checked ? true : undefined })}
+            className="rounded"
+          />
+          <span className="font-medium text-violet-600 dark:text-violet-400">Best fit</span>
+        </label>
+
         {/* AI jobs toggle */}
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filters.isAI === true}
@@ -52,6 +63,7 @@ export function FilterBar({ filters, onFiltersChange }: Props) {
         >
           <option value="postedAt">Sort: Date posted</option>
           <option value="aiScore">Sort: AI score</option>
+          <option value="fitScore">Sort: Fit score</option>
           <option value="firstSeenAt">Sort: Date added</option>
         </select>
       </div>

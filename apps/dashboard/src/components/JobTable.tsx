@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Job } from '@/lib/api';
 import { AiScoreBadge } from './AiScoreBadge';
 import { SourceBadge } from './SourceBadge';
+import { FitBadge } from './FitBadge';
 import { formatDistanceToNow } from 'date-fns';
 import { MapPin } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export function JobTable({ jobs }: { jobs: Job[] }) {
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden md:table-cell w-56">Location</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden lg:table-cell">Skills</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">Score</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden sm:table-cell">Fit</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden sm:table-cell">Source</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 hidden md:table-cell">Posted</th>
             </tr>
@@ -68,6 +70,9 @@ export function JobTable({ jobs }: { jobs: Job[] }) {
                 </td>
                 <td className="px-4 py-3">
                   <AiScoreBadge score={job.aiScore} />
+                </td>
+                <td className="px-4 py-3 hidden sm:table-cell">
+                  <FitBadge score={job.fitScore} reason={job.fitReason} />
                 </td>
                 <td className="px-4 py-3 hidden sm:table-cell">
                   <SourceBadge source={job.source} />

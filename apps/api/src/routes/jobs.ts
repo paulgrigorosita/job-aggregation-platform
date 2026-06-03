@@ -12,12 +12,13 @@ const JobFiltersSchema = z.object({
   isFullStack: z.coerce.boolean().optional(),
   isBackend: z.coerce.boolean().optional(),
   isFrontend: z.coerce.boolean().optional(),
+  bestFit: z.coerce.boolean().optional(),
   tags: z.string().optional(),
   salaryMin: z.coerce.number().optional(),
   salaryMax: z.coerce.number().optional(),
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(100).default(25),
-  sortBy: z.enum(['postedAt', 'aiScore', 'firstSeenAt']).default('postedAt'),
+  sortBy: z.enum(['postedAt', 'aiScore', 'firstSeenAt', 'fitScore']).default('postedAt'),
   sortDir: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -43,7 +44,7 @@ export async function jobRoutes(app: FastifyInstance) {
     },
     async handler(request, reply) {
       const query = JobFiltersSchema.parse(request.query);
-      const { page, pageSize, sortBy, sortDir, q, company, source, remote, isAI, isFullStack, isBackend, isFrontend, tags, salaryMin, salaryMax } = query;
+      const { page, pageSize, sortBy, sortDir, q, company, source, remote, isAI, isFullStack, isBackend, isFrontend, bestFit, tags, salaryMin, salaryMax } = query;
 
       const where: Record<string, unknown> = { isActive: true };
 
@@ -58,6 +59,7 @@ export async function jobRoutes(app: FastifyInstance) {
       if (source) where.source = source;
       if (remote !== undefined) where.remote = remote;
       if (isAI !== undefined) where.isAI = isAI;
+      if (bestFit) where.fitScore = { gte: 50 }; // only jobs scored 50+ are "best fit"
       if (isFullStack !== undefined) where.isFullStack = isFullStack;
       if (isBackend !== undefined) where.isBackend = isBackend;
       if (isFrontend !== undefined) where.isFrontend = isFrontend;

@@ -1,6 +1,6 @@
 import { Worker, type Job } from 'bullmq';
 import { createConnection } from '../redis.js';
-import { scrapeQueue, type ScrapeJobData } from '../queues.js';
+import { scrapeQueue, rankQueue, type ScrapeJobData } from '../queues.js';
 import { scraperFactory } from '@jap/scrapers';
 import { createLogger } from '@jap/shared';
 
@@ -20,6 +20,12 @@ export function createScrapeWorker() {
         { source, status: result.status, stats: result.stats, durationMs: result.durationMs },
         'Scrape job completed'
       );
+
+      // Trigger ranking after each scrape so new jobs get scored
+      if (result.stats.persisted > 0 && process.env.ANTHROPIC_API_KEY) {
+        await rankQueue.add('rank:after-scrape', {}, { jobId: `rank:${Date.now()}`, priority: 5 });
+        logger.info({ newJobs: result.stats.persisted }, 'Queued ranking job');
+      }
 
       return result;
     },

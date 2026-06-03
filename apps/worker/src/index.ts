@@ -3,6 +3,7 @@ import { createLogger } from '@jap/shared';
 import { createScrapeWorker } from './workers/scrapeWorker.js';
 import { createEmbedWorker } from './workers/embedWorker.js';
 import { createAlertWorker } from './workers/alertWorker.js';
+import { createRankWorker } from './workers/rankWorker.js';
 import { initScheduler, triggerImmediateScrape } from './scheduler.js';
 import { discoverGreenhouseCompanies } from '@jap/scrapers';
 
@@ -24,6 +25,7 @@ async function main() {
   const scrapeWorker = createScrapeWorker();
   const embedWorker = createEmbedWorker();
   const alertWorker = createAlertWorker();
+  const rankWorker = createRankWorker();
 
   logger.info('All workers started');
 
@@ -34,6 +36,7 @@ async function main() {
       scrapeWorker.close(),
       embedWorker?.close(),
       alertWorker.close(),
+      rankWorker.close(),
     ]);
 
     process.exit(0);
