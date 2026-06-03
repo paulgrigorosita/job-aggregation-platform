@@ -28,13 +28,21 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const contact = [
-      resume.email,
-      resume.phone,
-      resume.linkedinUrl ? `<a href="${resume.linkedinUrl}">LinkedIn</a>` : null,
-      resume.githubUrl ? `<a href="${resume.githubUrl}">GitHub</a>` : null,
-      resume.portfolioUrl ? `<a href="${resume.portfolioUrl}">Portfolio</a>` : null,
-    ].filter(Boolean).join(' &nbsp;&bull;&nbsp; ');
+    const contact = `
+      <table class="contact-table">
+        <tr>
+          <td>&#x1F4CD; ${resume.location ?? 'Anytown, AZ, 85000'}</td>
+          ${resume.linkedinUrl ? `<td><span class="contact-label">LinkedIn:</span> <a href="${resume.linkedinUrl}">${resume.linkedinUrl.replace('https://', '')}</a></td>` : '<td></td>'}
+        </tr>
+        <tr>
+          <td>&#9993; <a href="mailto:${resume.email}">${resume.email}</a></td>
+          ${resume.githubUrl ? `<td><span class="contact-label">GitHub:</span> <a href="${resume.githubUrl}">${resume.githubUrl.replace('https://', '')}</a></td>` : '<td></td>'}
+        </tr>
+        <tr>
+          <td>&#9990; ${resume.phone}</td>
+          ${resume.portfolioUrl ? `<td><span class="contact-label">Portfolio:</span> <a href="${resume.portfolioUrl}">${resume.portfolioUrl.replace('https://', '')}</a></td>` : '<td></td>'}
+        </tr>
+      </table>`;
 
     const workHTML = resume.workHistory.map(w => `
       <div class="role">
@@ -86,8 +94,10 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
     }
     h1 { font-size: 24pt; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 3px; }
     .title { font-size: 12pt; color: #5b21b6; font-weight: 600; margin-bottom: 6px; }
-    .contact { font-size: 9pt; color: #555; margin-bottom: 18px; }
-    .contact a { color: #5b21b6; text-decoration: none; }
+    .contact-table { width: 100%; border-collapse: collapse; font-size: 9pt; color: #444; margin-bottom: 18px; }
+    .contact-table td { padding: 1.5px 0; width: 50%; vertical-align: top; }
+    .contact-table a { color: #1a1a1a; text-decoration: none; }
+    .contact-label { font-weight: 600; color: #1a1a1a; }
     .divider { border: none; border-top: 1.5px solid #e5e7eb; margin: 0 0 14px; }
     .section-title {
       font-size: 8pt;
@@ -137,7 +147,7 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
 <body>
   <h1>${resume.name}</h1>
   <div class="title">${resume.title}</div>
-  <div class="contact">${contact}</div>
+  ${contact}
   <hr class="divider"/>
 
   <div class="section-title">Summary</div>
@@ -182,10 +192,15 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
                 {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                 {copied ? 'Copied!' : 'Copy text'}
               </button>
-              <button onClick={downloadPDF} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                <Download size={14} />
-                Download PDF
-              </button>
+              <div className="relative group">
+                <button onClick={downloadPDF} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                  <Download size={14} />
+                  Download PDF
+                </button>
+                <div className="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 text-white text-xs rounded-lg px-3 py-2 hidden group-hover:block z-10 leading-relaxed">
+                  In the print dialog: uncheck <strong>Headers and footers</strong> to remove the date, URL, and page number.
+                </div>
+              </div>
             </>
           )}
           <button
