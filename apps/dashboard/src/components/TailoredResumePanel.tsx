@@ -80,7 +80,7 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>${resume.name} — Resume</title>
+  <title></title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -137,10 +137,19 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
     .edu-duration { font-size: 9pt; color: #888; white-space: nowrap; margin-left: 12px; }
     @media print {
       body { padding: 24px 32px; }
-      @page { margin: 0.5in; size: letter; }
       .role { page-break-inside: avoid; }
       .project { page-break-inside: avoid; }
       .edu-row { page-break-inside: avoid; }
+    }
+    @page {
+      margin: 0.5in;
+      size: letter;
+      @top-left { content: none; }
+      @top-center { content: none; }
+      @top-right { content: none; }
+      @bottom-left { content: none; }
+      @bottom-center { content: none; }
+      @bottom-right { content: none; }
     }
   </style>
 </head>
