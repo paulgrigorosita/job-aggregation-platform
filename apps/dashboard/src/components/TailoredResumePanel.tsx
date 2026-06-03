@@ -31,7 +31,7 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
     const contact = `
       <table class="contact-table">
         <tr>
-          <td>&#x1F4CD; ${resume.location ?? 'Anytown, AZ, 85000'}</td>
+          <td>&#x1F4CD; Anytown, AZ, 85000</td>
           ${resume.linkedinUrl ? `<td><span class="contact-label">LinkedIn:</span> <a href="${resume.linkedinUrl}">${resume.linkedinUrl.replace('https://', '')}</a></td>` : '<td></td>'}
         </tr>
         <tr>
