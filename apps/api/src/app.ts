@@ -9,6 +9,7 @@ import { jobRoutes } from './routes/jobs.js';
 import { companyRoutes } from './routes/companies.js';
 import { statsRoutes } from './routes/stats.js';
 import { feedRoutes } from './routes/feed.js';
+import { resumeRoutes } from './routes/resume.js';
 
 const logger = createLogger('api');
 
@@ -49,6 +50,7 @@ export async function buildApp() {
   await app.register(companyRoutes, { prefix: '/api/v1' });
   await app.register(statsRoutes, { prefix: '/api/v1' });
   await app.register(feedRoutes, { prefix: '/api/v1' });
+  await app.register(resumeRoutes, { prefix: '/api/v1' });
 
   // Global error handler
   app.setErrorHandler((error, request, reply) => {

@@ -28,9 +28,32 @@ export interface Job {
   firstSeenAt: string;
   fitScore?: number | null;
   fitReason?: string | null;
+  tailoredResume?: TailoredResume | null;
   company?: { name: string; slug: string; logoUrl?: string };
   tags?: Array<{ tag: string }>;
 }
+
+export interface WorkEntry {
+  company: string;
+  duration: string;
+  title: string;
+  highlights: string[];
+}
+
+export interface ResumeProfile {
+  id?: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  linkedinUrl?: string | null;
+  githubUrl?: string | null;
+  title: string;
+  summary: string;
+  skills: string[];
+  workHistory: WorkEntry[];
+}
+
+export type TailoredResume = ResumeProfile;
 
 export interface JobFilters {
   q?: string;
@@ -55,14 +78,18 @@ export interface PaginatedJobs {
   meta: { page: number; pageSize: number; total: number; totalPages: number };
 }
 
-async function apiFetch<T>(path: string, params?: Record<string, unknown>): Promise<T> {
+async function apiFetch<T>(path: string, params?: Record<string, unknown>, init?: RequestInit): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
     });
   }
-  const res = await fetch(url.toString(), { cache: 'no-store' });
+  const res = await fetch(url.toString(), {
+    cache: 'no-store',
+    headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
+    ...init,
+  });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -73,3 +100,14 @@ export const fetchJobs = (filters: JobFilters = {}) =>
 export const fetchJob = (id: string) => apiFetch<Job>(`/jobs/${id}`);
 
 export const fetchStats = () => apiFetch<StatsResponse>('/stats');
+
+export const fetchResume = () => apiFetch<ResumeProfile | null>('/resume');
+
+export const saveResume = (data: ResumeProfile) =>
+  apiFetch<ResumeProfile>('/resume', undefined, { method: 'PUT', body: JSON.stringify(data) });
+
+export const tailorResume = (jobId: string) =>
+  apiFetch<TailoredResume>(`/jobs/${jobId}/tailor`, undefined, { method: 'POST' });
+
+export const fetchTailoredResume = (jobId: string) =>
+  apiFetch<TailoredResume | null>(`/jobs/${jobId}/tailor`);

@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import { notFound } from 'next/navigation';
 import { AiScoreBadge } from '@/components/AiScoreBadge';
 import { SourceBadge } from '@/components/SourceBadge';
+import { FitBadge } from '@/components/FitBadge';
+import { TailoredResumePanel } from '@/components/TailoredResumePanel';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, MapPin, DollarSign, Building2 } from 'lucide-react';
@@ -37,6 +39,7 @@ export default async function JobPage({ params }: { params: { id: string } }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <AiScoreBadge score={job.aiScore} />
+            <FitBadge score={job.fitScore} reason={job.fitReason} />
             <SourceBadge source={job.source} />
             {job.remote && (
               <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
@@ -80,6 +83,8 @@ export default async function JobPage({ params }: { params: { id: string } }) {
         >
           Apply Now <ExternalLink size={16} />
         </a>
+
+        <TailoredResumePanel jobId={job.id} initial={job.tailoredResume} />
 
         {job.description && (
           <div className="mt-8 prose dark:prose-invert max-w-none">

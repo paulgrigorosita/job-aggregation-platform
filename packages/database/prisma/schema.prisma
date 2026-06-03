@@ -52,6 +52,7 @@ model Job {
   isActive       Boolean   @default(true)
   fitScore       Int?      // 0-100 resume fit score from Claude (null = not yet ranked)
   fitReason      String?   @db.Text // brief explanation from Claude
+  tailoredResume Json?     // Claude-generated tailored resume JSON for this job
   tags           JobTag[]
 
   @@index([source])
@@ -72,6 +73,23 @@ model JobTag {
   @@unique([jobId, tag])
   @@index([tag])
   @@map("job_tags")
+}
+
+model Resume {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  linkedinUrl String?
+  githubUrl   String?
+  title       String   // base title e.g. "Full-Stack Engineer"
+  summary     String   @db.Text
+  skills      Json     // string[]
+  workHistory Json     // WorkEntry[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("resumes")
 }
 
 model ScraperRun {
