@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { tailorResume, fetchTailoredResume, type TailoredResume } from '@/lib/api';
-import { FileText, Loader2, Copy, Check, RefreshCw } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { tailorResume, type TailoredResume } from '@/lib/api';
+import { FileText, Loader2, Copy, Check, RefreshCw, Download } from 'lucide-react';
 
 export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial?: TailoredResume | null }) {
   const [resume, setResume] = useState<TailoredResume | null>(initial ?? null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const generate = async () => {
     setLoading(true);
@@ -21,6 +22,46 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
     } finally {
       setLoading(false);
     }
+  };
+
+  const downloadPDF = () => {
+    if (!printRef.current || !resume) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+<meta charset="utf-8"/>
+<title>${resume.name} — Resume</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; line-height: 1.5; color: #111; padding: 32px 40px; max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+  .subtitle { font-size: 13px; color: #5b21b6; font-weight: 600; margin-bottom: 4px; }
+  .contact { font-size: 10px; color: #555; margin-bottom: 16px; }
+  .contact a { color: #5b21b6; text-decoration: none; }
+  .section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; margin: 14px 0 6px; }
+  .summary { color: #333; margin-bottom: 4px; }
+  .skills { display: flex; flex-wrap: wrap; gap: 4px; }
+  .skill { background: #f3f0ff; color: #5b21b6; padding: 1px 7px; border-radius: 9999px; font-size: 10px; }
+  .role { margin-bottom: 10px; }
+  .role-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .role-company { font-weight: 700; }
+  .role-duration { font-size: 10px; color: #888; }
+  .role-title { font-size: 10px; color: #5b21b6; font-weight: 600; margin-bottom: 3px; }
+  ul { padding-left: 12px; }
+  li { margin-bottom: 1px; color: #333; }
+  .project { margin-bottom: 8px; }
+  .project-name { font-weight: 600; }
+  .project-desc { color: #555; font-size: 10px; }
+  .project-tech { font-size: 9px; color: #888; margin-top: 1px; }
+  .edu-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .edu-inst { font-weight: 600; }
+  .edu-detail { font-size: 10px; color: #555; }
+  @media print { body { padding: 20px 28px; } }
+</style>
+</head><body>${printRef.current.innerHTML}</body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
   };
 
   const copyAsText = () => {
@@ -40,10 +81,16 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
         </h2>
         <div className="flex gap-2">
           {resume && (
-            <button onClick={copyAsText} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-              {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-              {copied ? 'Copied!' : 'Copy text'}
-            </button>
+            <>
+              <button onClick={copyAsText} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                {copied ? 'Copied!' : 'Copy text'}
+              </button>
+              <button onClick={downloadPDF} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                <Download size={14} />
+                Download PDF
+              </button>
+            </>
           )}
           <button
             onClick={generate}
@@ -70,6 +117,28 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
 
       {resume && (
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-6 space-y-5 text-sm">
+          {/* Hidden print-ready version */}
+          <div ref={printRef} style={{ display: 'none' }}>
+            <h1>{resume.name}</h1>
+            <div className="subtitle">{resume.title}</div>
+            <div className="contact">
+              {[resume.email, resume.phone, resume.linkedinUrl && `<a href="${resume.linkedinUrl}">LinkedIn</a>`, resume.githubUrl && `<a href="${resume.githubUrl}">GitHub</a>`, resume.portfolioUrl && `<a href="${resume.portfolioUrl}">Portfolio</a>`].filter(Boolean).join(' &nbsp;|&nbsp; ')}
+            </div>
+            <div className="section-title">Summary</div>
+            <div className="summary">{resume.summary}</div>
+            <div className="section-title">Skills</div>
+            <div className="skills">{resume.skills.map(s => `<span class="skill">${s}</span>`).join('')}</div>
+            <div className="section-title">Work History</div>
+            {resume.workHistory.map(w => `
+              <div class="role">
+                <div class="role-header"><span class="role-company">${w.company}</span><span class="role-duration">${w.duration}</span></div>
+                <div class="role-title">${w.title}</div>
+                <ul>${w.highlights.map(h => `<li>${h}</li>`).join('')}</ul>
+              </div>`).join('')}
+            {resume.projects?.length ? `<div class="section-title">Projects</div>${resume.projects.map(p => `<div class="project"><span class="project-name">${p.name}</span>${p.url ? ` — <a href="${p.url}">${p.url}</a>` : ''}<div class="project-desc">${p.description}</div><div class="project-tech">${p.tech.join(', ')}</div></div>`).join('')}` : ''}
+            {resume.education?.length ? `<div class="section-title">Education</div>${resume.education.map(ed => `<div class="edu-row"><div><div class="edu-inst">${ed.institution}</div><div class="edu-detail">${ed.degree} · ${ed.field}</div></div><div class="edu-detail">${ed.duration}</div></div>`).join('')}` : ''}
+          </div>
+
           {/* Header */}
           <div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">{resume.name}</h3>
@@ -79,6 +148,7 @@ export function TailoredResumePanel({ jobId, initial }: { jobId: string; initial
               {resume.phone && <span>{resume.phone}</span>}
               {resume.linkedinUrl && <a href={resume.linkedinUrl} target="_blank" rel="noopener noreferrer" className="underline">LinkedIn</a>}
               {resume.githubUrl && <a href={resume.githubUrl} target="_blank" rel="noopener noreferrer" className="underline">GitHub</a>}
+              {resume.portfolioUrl && <a href={resume.portfolioUrl} target="_blank" rel="noopener noreferrer" className="underline">Portfolio</a>}
             </div>
           </div>
 

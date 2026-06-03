@@ -54,6 +54,7 @@ STRICT RULES:
 - Only adjust: resume title, summary, skills order/selection, job titles in workHistory, and highlights
 - Skills: reorder to put the most relevant ones first, remove unrelated ones, keep minimum 5
 - Highlights: rewrite to emphasize experience most relevant to this job (2-4 bullets per role)
+- CRITICAL: The resume "title" must be a natural professional title like "Senior Full Stack Engineer" or "Senior Software Engineer" — NEVER copy the job posting title verbatim. It should reflect the candidate's identity, not the job ad.
 - Return ONLY valid JSON, no markdown, no explanation
 
 JOB POSTING:
@@ -71,7 +72,7 @@ Return the tailored resume in exactly this JSON structure:
   "linkedinUrl": "...",
   "githubUrl": "...",
   "portfolioUrl": "...",
-  "title": "adjusted title matching the job",
+  "title": "natural professional title e.g. 'Senior Full Stack Engineer' — never copy the job posting title",
   "summary": "2-3 sentence summary tailored to this role",
   "skills": ["most relevant first", ...],
   "workHistory": [
