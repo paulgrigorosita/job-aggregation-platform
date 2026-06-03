@@ -5,15 +5,71 @@ import { saveResume, type ResumeProfile, type WorkEntry } from '@/lib/api';
 import { Plus, Trash2, Save } from 'lucide-react';
 
 const EMPTY: ResumeProfile = {
-  name: '',
-  email: '',
-  phone: '',
-  linkedinUrl: '',
-  githubUrl: '',
-  title: '',
-  summary: '',
-  skills: [],
-  workHistory: [],
+  name: 'Jane Example',
+  email: 'jane@example.com',
+  phone: '+1 555 000 0000',
+  linkedinUrl: 'https://www.linkedin.com/in/jane-example',
+  githubUrl: 'https://github.com/paulgrigorosita',
+  title: 'Senior Full Stack & AI Developer',
+  summary: "Senior Full Stack Developer with 7+ years of experience building scalable SaaS platforms, AI-driven systems, and high-performance web applications. I use AI as a force multiplier across development, debugging, and optimization while keeping systems maintainable, reliable, and production-ready. Core stack: React, Next.js, React Native, Node.js, Python, TypeScript, PostgreSQL, Supabase, AWS, and modern AI tooling.",
+  skills: [
+    'TypeScript', 'JavaScript (ES6+)', 'Python', 'SQL',
+    'React', 'Next.js', 'React Native', 'Angular', 'Tailwind CSS',
+    'Node.js', 'Express.js', 'REST API', 'GraphQL', 'FastAPI',
+    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Supabase',
+    'AWS', 'Docker', 'CI/CD', 'Serverless', 'Terraform',
+    'LLM Integration', 'LangChain', 'RAG Pipelines', 'Prompt Engineering',
+    'ETL Pipelines', 'Microservices', 'Distributed Systems', 'Performance Optimization',
+    'Git', 'Agile/Scrum',
+  ],
+  workHistory: [
+    {
+      company: 'CoorWorks',
+      duration: 'May 2024 – Feb 2026',
+      title: 'Full Stack Developer',
+      highlights: [
+        'Built and maintained MEAN stack applications using Angular 18, Node.js, Express, and MongoDB, supporting 5,000+ concurrent users with sub-200ms latency',
+        'Integrated AI automation workflows using GPT, Llama, LangChain, CrewAI, and custom RAG pipelines, reducing support response time by 40%',
+        'Modernized architecture using microservices, serverless patterns, and event-driven queues with AWS Lambda, S3, DynamoDB, SQS, and CloudWatch',
+        'Improved performance with Redis caching and optimized database queries across MongoDB and PostgreSQL',
+        'Implemented CI/CD pipelines using GitHub Actions and Docker, delivering features 10–15% ahead of sprint timelines',
+        'Applied Terraform for infrastructure automation across AWS and GCP environments',
+      ],
+    },
+    {
+      company: 'Phoenix Defense',
+      duration: 'Jan 2022 – Apr 2024',
+      title: 'Software Engineer',
+      highlights: [
+        'Refactored and optimized mission-critical defense systems across Node.js, Java, and .NET, reducing downtime by 30%',
+        'Developed AI-based anomaly detection services using Python and FastAPI, improving detection accuracy to 95%',
+        'Automated deployment workflows with Docker, Linux scripting, Azure DevOps, and AWS CodePipeline',
+        'Built scalable APIs and event-driven services using Express, GraphQL, REST, AWS Lambda, and API Gateway',
+        'Supported security hardening and compliance requirements in high-reliability environments',
+      ],
+    },
+    {
+      company: 'Tata Consultancy Services',
+      duration: 'Jan 2021 – Dec 2021',
+      title: 'Software Engineer',
+      highlights: [
+        'Built shopping platform using Java, JSP, SQL, React, and Spring Boot',
+        'Led a team of 4–5 developers through Scrum workflows, planning, and delivery',
+        'Integrated authentication, role-based access, and CRM features using Node.js, Express, and MySQL',
+        'Created dashboards with React, Redux, and Material UI',
+      ],
+    },
+    {
+      company: 'Axosoft',
+      duration: 'Jan 2020 – May 2020',
+      title: 'Software Engineer',
+      highlights: [
+        'Improved performance of legacy systems, reducing code footprint by 15% and runtime by 10%',
+        'Delivered new React and Redux features with improved UI responsiveness',
+        'Built automated testing pipelines using Jest, Mocha, and Jenkins',
+      ],
+    },
+  ],
 };
 
 export function ResumeEditor({ initial }: { initial: ResumeProfile | null }) {
