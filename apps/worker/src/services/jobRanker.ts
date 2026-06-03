@@ -104,15 +104,6 @@ export async function rankNewJobs(): Promise<{ ranked: number; deactivated: numb
   let deactivated = 0;
 
   for (const [, jobs] of byCompany) {
-    // Single job — no ranking needed, just mark as scored (score = -1 means skipped)
-    if (jobs.length === 1) {
-      await db.job.update({
-        where: { id: jobs[0].id },
-        data: { fitScore: -1 }, // -1 = only listing, not scored
-      });
-      ranked++;
-      continue;
-    }
 
     // Multiple jobs — score them all with Claude then keep top MAX_FITS_PER_COMPANY
     const scores: JobScore[] = [];
@@ -140,7 +131,8 @@ export async function rankNewJobs(): Promise<{ ranked: number; deactivated: numb
     // Sort descending by score
     scores.sort((a, b) => b.score - a.score);
 
-    const topIds = new Set(scores.slice(0, MAX_FITS_PER_COMPANY).map((s) => s.jobId));
+    const keepCount = jobs.length === 1 ? 1 : MAX_FITS_PER_COMPANY;
+    const topIds = new Set(scores.slice(0, keepCount).map((s) => s.jobId));
 
     // Persist scores and deactivate low-fit jobs
     for (const score of scores) {
