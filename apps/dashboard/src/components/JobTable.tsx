@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Job } from '@/lib/api';
 import { AiScoreBadge } from './AiScoreBadge';
@@ -9,6 +11,15 @@ import { formatDistanceToNow } from 'date-fns';
 import { MapPin, CheckCircle, Loader2, XCircle } from 'lucide-react';
 
 export function JobTable({ jobs }: { jobs: Job[] }) {
+  const router = useRouter();
+
+  // If any job is PENDING, refresh the page every 5s until they resolve
+  const hasPending = jobs.some(j => j.applicationStatus === 'PENDING');
+  useEffect(() => {
+    if (!hasPending) return;
+    const id = setInterval(() => router.refresh(), 5000);
+    return () => clearInterval(id);
+  }, [hasPending, router]);
   if (jobs.length === 0) {
     return (
       <div className="text-center py-16 text-slate-500 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">

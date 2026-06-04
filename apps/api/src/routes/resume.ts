@@ -91,7 +91,47 @@ export async function resumeRoutes(app: FastifyInstance) {
     },
   });
 
-  // POST /jobs/:id/apply?dryRun=true — queue an auto-apply (or preview-fill) job
+  // GET /apply-queue/debug — show queue counts + stuck/failed jobs in DB
+  app.get('/apply-queue/debug', {
+    schema: { tags: ['resume'], summary: 'Debug apply queue state' },
+    async handler(_request, reply) {
+      const [waiting, active, failed, completed] = await Promise.all([
+        applyQueue.getWaitingCount(),
+        applyQueue.getActiveCount(),
+        applyQueue.getFailedCount(),
+        applyQueue.getCompletedCount(),
+      ]);
+
+      const failedJobs = await applyQueue.getFailed(0, 20);
+      const pendingInDb = await db.job.findMany({
+        where: { applicationStatus: 'PENDING' },
+        select: { id: true, title: true, applyError: true },
+        orderBy: { firstSeenAt: 'desc' },
+        take: 20,
+      });
+      const failedInDb = await db.job.findMany({
+        where: { applicationStatus: 'FAILED' },
+        select: { id: true, title: true, applyError: true },
+        orderBy: { firstSeenAt: 'desc' },
+        take: 20,
+      });
+
+      return reply.send({
+        queue: { waiting, active, failed, completed },
+        failedBullJobs: failedJobs.map(j => ({
+          id: j.id,
+          jobId: j.data?.jobId,
+          failedReason: j.failedReason,
+          stacktrace: j.stacktrace?.[0]?.slice(0, 500),
+          attemptsMade: j.attemptsMade,
+        })),
+        pendingInDb,
+        failedInDb,
+      });
+    },
+  });
+
+
   app.post('/jobs/:id/apply', {
     schema: { tags: ['resume'], summary: 'Auto-apply to a job via Puppeteer' },
     async handler(request, reply) {
