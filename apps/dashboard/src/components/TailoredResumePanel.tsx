@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { tailorResume, autoApply, fetchApplyStatus, type TailoredResume, type ApplyStatus } from '@/lib/api';
-import { FileText, Loader2, Copy, Check, RefreshCw, Download, Send, CheckCircle, XCircle } from 'lucide-react';
+import { tailorResume, autoApply, previewFill, fetchApplyStatus, type TailoredResume, type ApplyStatus, BASE_URL } from '@/lib/api';
+import { FileText, Loader2, Copy, Check, RefreshCw, Download, Send, CheckCircle, XCircle, Eye, X } from 'lucide-react';
 
 export function TailoredResumePanel({
   jobId,
@@ -19,7 +19,15 @@ export function TailoredResumePanel({
   const [error, setError] = useState<string | null>(null);
   const [applyStatus, setApplyStatus] = useState<ApplyStatus | null>(initialApplyStatus ?? null);
   const [applying, setApplying] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewReady, setPreviewReady] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const previewPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // screenshotUrl busts cache on each new preview run
+  const [screenshotCacheBuster, setScreenshotCacheBuster] = useState(Date.now());
+  const screenshotUrl = `${BASE_URL}/jobs/${jobId}/apply/screenshot?t=${screenshotCacheBuster}`;
 
   // Poll for apply status while PENDING
   useEffect(() => {
@@ -219,6 +227,43 @@ export function TailoredResumePanel({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const triggerPreview = async () => {
+    setPreviewing(true);
+    setPreviewReady(false);
+    setError(null);
+    try {
+      await previewFill(jobId);
+      // Poll until the screenshot file exists (API returns 200)
+      previewPollRef.current = setInterval(async () => {
+        try {
+          const res = await fetch(screenshotUrl, { method: 'HEAD' });
+          if (res.ok) {
+            setScreenshotCacheBuster(Date.now());
+            setPreviewReady(true);
+            setShowPreview(true);
+            setPreviewing(false);
+            if (previewPollRef.current) {
+              clearInterval(previewPollRef.current);
+              previewPollRef.current = null;
+            }
+          }
+        } catch { /* keep polling */ }
+      }, 2000);
+      // Timeout after 90s
+      setTimeout(() => {
+        if (previewPollRef.current) {
+          clearInterval(previewPollRef.current);
+          previewPollRef.current = null;
+          setPreviewing(false);
+          setError('Preview timed out — check worker logs');
+        }
+      }, 90_000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to queue preview');
+      setPreviewing(false);
+    }
+  };
+
   const triggerApply = async () => {
     setApplying(true);
     setError(null);
@@ -257,6 +302,16 @@ export function TailoredResumePanel({
               </div>
             </>
           )}
+          {/* Preview Fill button */}
+          <button
+            onClick={previewing ? undefined : (previewReady ? () => setShowPreview(true) : triggerPreview)}
+            disabled={!resume}
+            title={!resume ? 'Generate a tailored resume first' : previewReady ? 'View last screenshot' : 'Fill the form and take a screenshot without submitting'}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+          >
+            {previewing ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+            {previewing ? 'Filling…' : previewReady ? 'View Preview' : 'Preview Fill'}
+          </button>
           {/* Auto Apply button + status */}
           {applyStatus?.applicationStatus === 'APPLIED' ? (
             <span className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg">
@@ -401,6 +456,35 @@ export function TailoredResumePanel({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Screenshot modal */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto" onClick={() => setShowPreview(false)}>
+          <div className="relative bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-4xl w-full my-8" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+              <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <Eye size={16} className="text-violet-500" />
+                Form Preview — filled but not submitted
+              </span>
+              <button onClick={() => setShowPreview(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4 overflow-auto max-h-[80vh]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={screenshotUrl}
+                alt="Filled application form preview"
+                className="w-full rounded border border-slate-200 dark:border-slate-700"
+              />
+            </div>
+            <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 flex justify-between items-center">
+              <span>Looks correct? Click <strong>Auto Apply</strong> to submit.</span>
+              <button onClick={() => setShowPreview(false)} className="px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Close</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -6,11 +6,11 @@ import { applyToJob } from '../services/applyService.js';
 const logger = createLogger('worker:apply');
 
 export function createApplyWorker() {
-  const worker = new Worker<{ jobId: string }>(
+  const worker = new Worker<{ jobId: string; dryRun?: boolean }>(
     'apply',
     async (job) => {
-      logger.info({ jobId: job.data.jobId }, 'Starting auto-apply');
-      await applyToJob(job.data.jobId);
+      logger.info({ jobId: job.data.jobId, dryRun: job.data.dryRun }, 'Starting auto-apply');
+      await applyToJob(job.data.jobId, job.data.dryRun ?? false);
     },
     {
       connection: createConnection(),

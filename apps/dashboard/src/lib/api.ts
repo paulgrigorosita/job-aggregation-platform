@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 export interface StatsResponse {
   totalJobs: number;
@@ -140,6 +140,9 @@ export interface ApplyStatus {
 
 export const autoApply = (jobId: string) =>
   apiFetch<{ status: string }>(`/jobs/${jobId}/apply`, undefined, { method: 'POST' });
+
+export const previewFill = (jobId: string) =>
+  apiFetch<{ status: string }>(`/jobs/${jobId}/apply`, { dryRun: 'true' }, { method: 'POST' });
 
 export const fetchApplyStatus = (jobId: string) =>
   apiFetch<ApplyStatus>(`/jobs/${jobId}/apply-status`);

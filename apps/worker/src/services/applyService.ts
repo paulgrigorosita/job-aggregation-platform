@@ -154,7 +154,11 @@ async function fillField(page: Page, selector: string, value: string) {
   await el.type(value, { delay: 20 });
 }
 
-export async function applyToJob(jobId: string): Promise<void> {
+export function screenshotPath(jobId: string) {
+  return join('/tmp', `apply_preview_${jobId}.png`);
+}
+
+export async function applyToJob(jobId: string, dryRun = false): Promise<void> {
   const [job, baseResume] = await Promise.all([
     db.job.findUnique({ where: { id: jobId } }),
     db.resume.findFirst({ orderBy: { createdAt: 'desc' } }),
@@ -250,6 +254,20 @@ export async function applyToJob(jobId: string): Promise<void> {
       await fileInput.uploadFile(pdfPath);
       // Wait for upload to process
       await new Promise(r => setTimeout(r, 2000));
+    }
+
+    // Screenshot the filled form before submitting
+    await page.screenshot({ path: screenshotPath(jobId), fullPage: true });
+
+    if (dryRun) {
+      // Dry run: do not submit — screenshot is the deliverable
+      await page.close();
+      await db.job.update({
+        where: { id: job.id },
+        data: { applicationStatus: null, applyError: null },
+      });
+      logger.info({ jobId }, 'Dry-run complete — screenshot saved, form not submitted');
+      return;
     }
 
     // Submit the form

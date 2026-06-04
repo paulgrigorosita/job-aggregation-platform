@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { createReadStream, existsSync } from 'fs';
+import { join } from 'path';
 import { db } from '@jap/database';
 import { tailorResumeForJob, type ResumeProfile } from '../services/resumeTailor.js';
 
@@ -89,21 +91,45 @@ export async function resumeRoutes(app: FastifyInstance) {
     },
   });
 
-  // POST /jobs/:id/apply — queue an auto-apply job
+  // POST /jobs/:id/apply?dryRun=true — queue an auto-apply (or preview-fill) job
   app.post('/jobs/:id/apply', {
     schema: { tags: ['resume'], summary: 'Auto-apply to a job via Puppeteer' },
     async handler(request, reply) {
       const { id } = request.params as { id: string };
+      const { dryRun } = (request.query as { dryRun?: string });
+      const isDryRun = dryRun === 'true' || dryRun === '1';
+
       const job = await db.job.findFirst({ where: { OR: [{ id }, { urlHash: id }] } });
       if (!job) return reply.status(404).send({ error: 'Job not found' });
-      if (job.applicationStatus === 'APPLIED') {
+      if (!isDryRun && job.applicationStatus === 'APPLIED') {
         return reply.status(409).send({ error: 'Already applied to this job' });
       }
 
-      await db.job.update({ where: { id: job.id }, data: { applicationStatus: 'PENDING', applyError: null } });
-      await applyQueue.add('apply', { jobId: job.id });
+      if (!isDryRun) {
+        await db.job.update({ where: { id: job.id }, data: { applicationStatus: 'PENDING', applyError: null } });
+      }
+      await applyQueue.add('apply', { jobId: job.id, dryRun: isDryRun });
 
-      return reply.status(202).send({ status: 'PENDING' });
+      return reply.status(202).send({ status: isDryRun ? 'PREVIEW' : 'PENDING' });
+    },
+  });
+
+  // GET /jobs/:id/apply/screenshot — serve the dry-run screenshot PNG
+  app.get('/jobs/:id/apply/screenshot', {
+    schema: { tags: ['resume'], summary: 'Serve the dry-run form screenshot' },
+    async handler(request, reply) {
+      const { id } = request.params as { id: string };
+      const job = await db.job.findFirst({ where: { OR: [{ id }, { urlHash: id }] }, select: { id: true } });
+      if (!job) return reply.status(404).send({ error: 'Job not found' });
+
+      const imgPath = join('/tmp', `apply_preview_${job.id}.png`);
+      if (!existsSync(imgPath)) {
+        return reply.status(404).send({ error: 'No preview screenshot yet. Run a preview-fill first.' });
+      }
+
+      reply.header('Content-Type', 'image/png');
+      reply.header('Cache-Control', 'no-store');
+      return reply.send(createReadStream(imgPath));
     },
   });
 
