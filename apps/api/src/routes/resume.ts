@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
-import { createReadStream, existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { db } from '@jap/database';
 import { tailorResumeForJob, type ResumeProfile } from '../services/resumeTailor.js';
@@ -167,9 +167,11 @@ export async function resumeRoutes(app: FastifyInstance) {
         return reply.status(404).send({ error: 'No preview screenshot yet. Run a preview-fill first.' });
       }
 
+      const buffer = readFileSync(imgPath);
       reply.header('Content-Type', 'image/png');
       reply.header('Cache-Control', 'no-store');
-      return reply.send(createReadStream(imgPath));
+      reply.header('Content-Length', buffer.length);
+      return reply.send(buffer);
     },
   });
 
