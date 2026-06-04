@@ -22,12 +22,11 @@ export function TailoredResumePanel({
   const [previewing, setPreviewing] = useState(false);
   const [previewReady, setPreviewReady] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [screenshotDataUrl, setScreenshotDataUrl] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const previewPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // screenshotUrl busts cache on each new preview run
-  const [screenshotCacheBuster, setScreenshotCacheBuster] = useState(Date.now());
-  const screenshotUrl = `${BASE_URL}/jobs/${jobId}/apply/screenshot?t=${screenshotCacheBuster}`;
+  const screenshotApiUrl = `${BASE_URL}/jobs/${jobId}/apply/screenshot`;
 
   // Poll for apply status while PENDING
   useEffect(() => {
@@ -227,18 +226,31 @@ export function TailoredResumePanel({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const loadScreenshot = async () => {
+    const res = await fetch(screenshotApiUrl, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const triggerPreview = async () => {
     setPreviewing(true);
     setPreviewReady(false);
+    setScreenshotDataUrl(null);
     setError(null);
     try {
       await previewFill(jobId);
-      // Poll until the screenshot file exists (API returns 200)
+      // Poll until the screenshot is ready, then fetch it as a data URL
       previewPollRef.current = setInterval(async () => {
         try {
-          const res = await fetch(screenshotUrl, { method: 'HEAD' });
-          if (res.ok) {
-            setScreenshotCacheBuster(Date.now());
+          const dataUrl = await loadScreenshot();
+          if (dataUrl) {
+            setScreenshotDataUrl(dataUrl);
             setPreviewReady(true);
             setShowPreview(true);
             setPreviewing(false);
@@ -304,7 +316,7 @@ export function TailoredResumePanel({
           )}
           {/* Preview Fill button */}
           <button
-            onClick={previewing ? undefined : (previewReady ? () => setShowPreview(true) : triggerPreview)}
+            onClick={previewing ? undefined : (previewReady ? async () => { if (!screenshotDataUrl) { const d = await loadScreenshot(); if (d) setScreenshotDataUrl(d); } setShowPreview(true); } : triggerPreview)}
             disabled={!resume}
             title={!resume ? 'Generate a tailored resume first' : previewReady ? 'View last screenshot' : 'Fill the form and take a screenshot without submitting'}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
@@ -473,12 +485,11 @@ export function TailoredResumePanel({
               </button>
             </div>
             <div className="p-4 overflow-auto max-h-[80vh]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={screenshotUrl}
-                alt="Filled application form preview"
-                className="w-full rounded border border-slate-200 dark:border-slate-700"
-              />
+              {screenshotDataUrl
+                ? // eslint-disable-next-line @next/next/no-img-element
+                  <img src={screenshotDataUrl} alt="Filled application form preview" className="w-full rounded border border-slate-200 dark:border-slate-700" />
+                : <div className="flex items-center justify-center h-40 text-slate-400"><Loader2 size={24} className="animate-spin" /></div>
+              }
             </div>
             <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 flex justify-between items-center">
               <span>Looks correct? Click <strong>Auto Apply</strong> to submit.</span>
