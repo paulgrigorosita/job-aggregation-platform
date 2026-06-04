@@ -6,7 +6,7 @@ import { AiScoreBadge } from './AiScoreBadge';
 import { SourceBadge } from './SourceBadge';
 import { FitBadge } from './FitBadge';
 import { formatDistanceToNow } from 'date-fns';
-import { MapPin } from 'lucide-react';
+import { MapPin, CheckCircle, Loader2, XCircle } from 'lucide-react';
 
 export function JobTable({ jobs }: { jobs: Job[] }) {
   if (jobs.length === 0) {
@@ -40,11 +40,22 @@ export function JobTable({ jobs }: { jobs: Job[] }) {
                 className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
               >
                 <td className="px-4 py-3">
-                  <Link href={`/jobs/${job.id}`} className="font-medium text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 line-clamp-1">
-                    {job.title}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/jobs/${job.id}`} className="font-medium text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 line-clamp-1">
+                      {job.title}
+                    </Link>
+                    {job.applicationStatus === 'APPLIED' && (
+                      <span title="Applied"><CheckCircle size={14} className="shrink-0 text-green-500" /></span>
+                    )}
+                    {job.applicationStatus === 'PENDING' && (
+                      <span title="Applying…"><Loader2 size={14} className="shrink-0 text-amber-400 animate-spin" /></span>
+                    )}
+                    {job.applicationStatus === 'FAILED' && (
+                      <span title="Apply failed"><XCircle size={14} className="shrink-0 text-red-400" /></span>
+                    )}
+                  </div>
                   {job.remote && (
-                    <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-medium">Remote</span>
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">Remote</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
