@@ -1,6 +1,0 @@
-# PASTE YOUR RESUME HERE
-# The job ranker reads this file to score job fit.
-# Plain text is fine — copy/paste from your PDF or LinkedIn.
-# Include: skills, years of experience, past roles, preferred stack.
-
-[Replace this placeholder with your resume text]

@@ -1,12 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import { db } from '@jap/database';
 import { createLogger } from '@jap/shared';
 
 const logger = createLogger('job-ranker');
-// Resolve relative to the repo root (process.cwd() = project root when running via pnpm)
-const RESUME_PATH = join(process.cwd(), 'config/resume.txt');
 const MAX_FITS_PER_COMPANY = 2;
 const BATCH_SIZE = 10; // jobs per Claude call
 const DESC_CHARS = 500; // chars of description to send — enough for requirements, not the whole post
@@ -17,15 +13,53 @@ interface JobScore {
   reason: string;
 }
 
-function loadResume(): string {
-  if (!existsSync(RESUME_PATH)) {
-    throw new Error(`Resume file not found at ${RESUME_PATH}. Please paste your resume into apps/worker/config/resume.txt`);
+interface WorkEntry {
+  company: string;
+  title: string;
+  duration: string;
+  highlights: string[];
+}
+
+interface EducationEntry {
+  institution: string;
+  degree: string;
+  field: string;
+  duration: string;
+}
+
+async function loadResumeText(): Promise<string> {
+  const resume = await db.resume.findFirst({ orderBy: { createdAt: 'desc' } });
+  if (!resume) {
+    throw new Error('No base resume found. Please save your resume in the dashboard under "My Resume" first.');
   }
-  const text = readFileSync(RESUME_PATH, 'utf-8').trim();
-  if (text.startsWith('[Replace this placeholder')) {
-    throw new Error('Resume file is still a placeholder. Please paste your actual resume into apps/worker/config/resume.txt');
+
+  const skills = (resume.skills as string[]) ?? [];
+  const workHistory = (resume.workHistory as WorkEntry[]) ?? [];
+  const education = (resume.education as EducationEntry[]) ?? [];
+
+  const lines: string[] = [
+    `${resume.name} — ${resume.title}`,
+    '',
+    'SUMMARY',
+    resume.summary,
+    '',
+    'SKILLS',
+    skills.join(', '),
+    '',
+    'WORK HISTORY',
+  ];
+  for (const w of workHistory) {
+    lines.push(`- ${w.title} at ${w.company} (${w.duration})`);
+    for (const h of w.highlights ?? []) lines.push(`  • ${h}`);
   }
-  return text;
+  if (education.length > 0) {
+    lines.push('', 'EDUCATION');
+    for (const ed of education) {
+      lines.push(`- ${ed.degree} in ${ed.field}, ${ed.institution} (${ed.duration})`);
+    }
+  }
+
+  return lines.join('\n');
 }
 
 async function scoreJobsBatch(
@@ -70,7 +104,7 @@ async function scoreJobsBatch(
 }
 
 export async function rankNewJobs(): Promise<{ ranked: number; deactivated: number }> {
-  const resumeText = loadResume();
+  const resumeText = await loadResumeText();
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   // Load all active jobs that haven't been ranked yet, grouped by company
