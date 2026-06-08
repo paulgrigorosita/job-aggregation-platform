@@ -276,7 +276,9 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
           `${containerSel} [role="combobox"], ${containerSel} [class*="select__control"], ${containerSel} [class*="Select-control"], ${containerSel} [aria-haspopup="listbox"]`
         );
         if (trigger) {
-          await trigger.click();
+          // Use a native DOM click — Puppeteer's mouse-based click() fails on
+          // visually-hidden a11y elements that custom select widgets render
+          await trigger.evaluate((el) => (el as HTMLElement).click());
           await new Promise((r) => setTimeout(r, 400));
 
           // Some comboboxes are searchable — typing narrows the rendered option list
@@ -289,7 +291,7 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
           for (const opt of optionHandles) {
             const text = await opt.evaluate((el) => (el.textContent ?? '').trim().toLowerCase());
             if (text && text.includes(value.toLowerCase())) {
-              await opt.click();
+              await opt.evaluate((el) => (el as HTMLElement).click());
               clicked = true;
               break;
             }
