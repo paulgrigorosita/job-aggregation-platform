@@ -172,20 +172,35 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
 
   const fields: QuestionField[] = await page.evaluate((marker) => {
     const out: Array<{ idx: number; labelText: string; kind: string; optionLabels?: string[] }> = [];
-    const containers = document.querySelectorAll('.field, [class*="field"], fieldset');
-    containers.forEach((container, idx) => {
-      const label = container.querySelector('label');
-      if (!label) return;
-      const labelText = (label.textContent ?? '').trim();
-      if (!labelText) return;
+    const seen = new Set<Element>();
+    let idx = 0;
 
-      const select = container.querySelector('select');
-      const textarea = container.querySelector('textarea');
-      const textInput = container.querySelector(
+    const labelEls = document.querySelectorAll('label, legend');
+    labelEls.forEach((label) => {
+      const labelText = (label.textContent ?? '').trim();
+      if (!labelText || labelText.length > 300) return;
+
+      // Walk up from the label to find the smallest ancestor that also contains a form control
+      let container: Element | null = label.parentElement;
+      let found: Element | null = null;
+      for (let i = 0; i < 8 && container; i++) {
+        if (container.querySelector('input:not([type="hidden"]), select, textarea, [role="combobox"], [aria-haspopup="listbox"]')) {
+          found = container;
+          break;
+        }
+        container = container.parentElement;
+      }
+      if (!found || seen.has(found)) return;
+      seen.add(found);
+      const containerEl = found;
+
+      const select = containerEl.querySelector('select');
+      const textarea = containerEl.querySelector('textarea');
+      const options = containerEl.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+      const combobox = containerEl.querySelector('[role="combobox"], [aria-haspopup="listbox"], [class*="select__control"], [class*="Select-control"]');
+      const textInput = containerEl.querySelector(
         'input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"])'
       );
-      const options = container.querySelectorAll('input[type="radio"], input[type="checkbox"]');
-      const combobox = container.querySelector('[role="combobox"], [class*="select__control"], [class*="Select-control"], [aria-haspopup="listbox"]');
 
       let kind: string | null = null;
       let optionLabels: string[] | undefined;
@@ -197,7 +212,7 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
         kind = 'options';
         optionLabels = Array.from(options).map((o) => {
           const id = o.getAttribute('id');
-          const optLabel = id ? container.querySelector(`label[for="${id}"]`) : null;
+          const optLabel = id ? containerEl.querySelector(`label[for="${id}"]`) : null;
           return (optLabel?.textContent ?? o.getAttribute('value') ?? '').trim();
         });
       } else if (combobox) {
@@ -209,8 +224,9 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
       }
 
       if (!kind) return;
-      container.setAttribute(marker, String(idx));
+      containerEl.setAttribute(marker, String(idx));
       out.push({ idx, labelText, kind, optionLabels });
+      idx += 1;
     });
     return out;
   }, FIELD_MARKER) as QuestionField[];
