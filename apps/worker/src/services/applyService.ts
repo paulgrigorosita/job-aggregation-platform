@@ -157,7 +157,7 @@ async function fillField(page: Page, selector: string, value: string) {
 interface QuestionField {
   idx: number;
   labelText: string;
-  kind: 'text' | 'textarea' | 'select' | 'options';
+  kind: 'text' | 'textarea' | 'select' | 'options' | 'combobox';
   optionLabels?: string[];
 }
 
@@ -181,8 +181,11 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
 
       const select = container.querySelector('select');
       const textarea = container.querySelector('textarea');
-      const textInput = container.querySelector('input[type="text"], input[type="email"], input[type="tel"], input:not([type])');
+      const textInput = container.querySelector(
+        'input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"])'
+      );
       const options = container.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+      const combobox = container.querySelector('[role="combobox"], [class*="select__control"], [class*="Select-control"], [aria-haspopup="listbox"]');
 
       let kind: string | null = null;
       let optionLabels: string[] | undefined;
@@ -197,6 +200,8 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
           const optLabel = id ? container.querySelector(`label[for="${id}"]`) : null;
           return (optLabel?.textContent ?? o.getAttribute('value') ?? '').trim();
         });
+      } else if (combobox) {
+        kind = 'combobox';
       } else if (textarea) {
         kind = 'textarea';
       } else if (textInput) {
@@ -249,6 +254,31 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
               selectEl.dispatchEvent(new Event('change', { bubbles: true }));
             }
           }, containerSel, value, FIELD_MARKER, field.idx);
+        }
+      } else if (field.kind === 'combobox') {
+        const trigger = await page.$(
+          `${containerSel} [role="combobox"], ${containerSel} [class*="select__control"], ${containerSel} [class*="Select-control"], ${containerSel} [aria-haspopup="listbox"]`
+        );
+        if (trigger) {
+          await trigger.click();
+          await new Promise((r) => setTimeout(r, 400));
+
+          // Some comboboxes are searchable — typing narrows the rendered option list
+          const searchInput = await page.$(`${containerSel} input[type="text"], ${containerSel} input:not([type])`);
+          if (searchInput) await searchInput.type(value, { delay: 20 });
+          await new Promise((r) => setTimeout(r, 400));
+
+          const optionHandles = await page.$$('[role="option"], [class*="select__option"], [class*="Select-option"], li[id*="option"]');
+          let clicked = false;
+          for (const opt of optionHandles) {
+            const text = await opt.evaluate((el) => (el.textContent ?? '').trim().toLowerCase());
+            if (text && text.includes(value.toLowerCase())) {
+              await opt.click();
+              clicked = true;
+              break;
+            }
+          }
+          if (!clicked) await page.keyboard.press('Escape');
         }
       } else if (field.kind === 'options' && field.optionLabels) {
         const matchIdx = field.optionLabels.findIndex((l) => l.toLowerCase().includes(value!.toLowerCase()));
