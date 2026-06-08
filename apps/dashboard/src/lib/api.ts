@@ -146,6 +146,3 @@ export const previewFill = (jobId: string) =>
 
 export const fetchApplyStatus = (jobId: string) =>
   apiFetch<ApplyStatus>(`/jobs/${jobId}/apply-status`);
-
-export const runFitRanker = () =>
-  apiFetch<{ status: string; message?: string; unrankedCount?: number }>('/rank/run', undefined, { method: 'POST' });

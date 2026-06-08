@@ -12,12 +12,6 @@ const applyQueue = new Queue('apply', {
   connection: new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379', { maxRetriesPerRequest: null }),
 });
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore ioredis version phantom conflict between api and worker packages
-const rankQueue = new Queue('rank', {
-  connection: new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379', { maxRetriesPerRequest: null }),
-});
-
 export async function resumeRoutes(app: FastifyInstance) {
   // GET /resume — fetch the single base resume
   app.get('/resume', {
@@ -49,29 +43,6 @@ export async function resumeRoutes(app: FastifyInstance) {
         : await db.resume.create({ data });
 
       return reply.send(resume);
-    },
-  });
-
-  // POST /rank/run — trigger fit-score calculation for unranked active jobs
-  app.post('/rank/run', {
-    schema: { tags: ['resume'], summary: 'Run the job fit ranker over unranked jobs' },
-    async handler(_request, reply) {
-      if (!process.env.ANTHROPIC_API_KEY) {
-        return reply.status(503).send({ error: 'ANTHROPIC_API_KEY not configured' });
-      }
-
-      const baseResume = await db.resume.findFirst({ orderBy: { createdAt: 'desc' } });
-      if (!baseResume) {
-        return reply.status(404).send({ error: 'No base resume found. Please save your resume first.' });
-      }
-
-      const unrankedCount = await db.job.count({ where: { isActive: true, fitScore: null } });
-      if (unrankedCount === 0) {
-        return reply.send({ status: 'NOOP', message: 'No unranked jobs found', unrankedCount: 0 });
-      }
-
-      await rankQueue.add('rank', {});
-      return reply.status(202).send({ status: 'QUEUED', unrankedCount });
     },
   });
 

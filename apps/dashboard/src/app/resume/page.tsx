@@ -1,6 +1,5 @@
 import { fetchResume } from '@/lib/api';
 import { ResumeEditor } from './ResumeEditor';
-import { FitRankerPanel } from './FitRankerPanel';
 
 export default async function ResumePage() {
   let resume = null;
@@ -17,7 +16,6 @@ export default async function ResumePage() {
         </p>
       </div>
       <ResumeEditor initial={resume} />
-      <FitRankerPanel />
     </div>
   );
 }
