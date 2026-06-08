@@ -272,32 +272,52 @@ async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger:
           }, containerSel, value, FIELD_MARKER, field.idx);
         }
       } else if (field.kind === 'combobox') {
-        const trigger = await page.$(
-          `${containerSel} [role="combobox"], ${containerSel} [class*="select__control"], ${containerSel} [class*="Select-control"], ${containerSel} [aria-haspopup="listbox"]`
-        );
-        if (trigger) {
-          // Use a native DOM click — Puppeteer's mouse-based click() fails on
-          // visually-hidden a11y elements that custom select widgets render
-          await trigger.evaluate((el) => (el as HTMLElement).click());
-          await new Promise((r) => setTimeout(r, 400));
+        const selected = await page.evaluate((containerSel, val, marker, idx) => {
+          const container = document.querySelector(`[${marker}="${idx}"]`);
+          const trigger = container?.querySelector(
+            '[role="combobox"], [aria-haspopup="listbox"], [class*="select__control"], [class*="Select-control"]'
+          ) as HTMLElement | null;
+          if (!trigger) return false;
 
-          // Some comboboxes are searchable — typing narrows the rendered option list
-          const searchInput = await page.$(`${containerSel} input[type="text"], ${containerSel} input:not([type])`);
-          if (searchInput) await searchInput.type(value, { delay: 20 });
-          await new Promise((r) => setTimeout(r, 400));
+          trigger.click();
 
-          const optionHandles = await page.$$('[role="option"], [class*="select__option"], [class*="Select-option"], li[id*="option"]');
-          let clicked = false;
-          for (const opt of optionHandles) {
-            const text = await opt.evaluate((el) => (el.textContent ?? '').trim().toLowerCase());
-            if (text && text.includes(value.toLowerCase())) {
-              await opt.evaluate((el) => (el as HTMLElement).click());
-              clicked = true;
-              break;
-            }
-          }
-          if (!clicked) await page.keyboard.press('Escape');
-        }
+          return new Promise<boolean>((resolve) => {
+            setTimeout(() => {
+              // Find the listbox opened by this specific trigger via aria-owns/controls,
+              // then fall back to any visible listbox on the page.
+              const controlsId =
+                trigger.getAttribute('aria-owns') ??
+                trigger.getAttribute('aria-controls') ??
+                trigger.querySelector('[aria-owns], [aria-controls]')?.getAttribute('aria-owns') ??
+                trigger.querySelector('[aria-owns], [aria-controls]')?.getAttribute('aria-controls');
+
+              let listbox: Element | null = controlsId ? document.getElementById(controlsId) : null;
+              if (!listbox) listbox = document.querySelector('[role="listbox"]');
+              if (!listbox) { resolve(false); return; }
+
+              const options = Array.from(
+                listbox.querySelectorAll('[role="option"], li, [class*="option"]')
+              ).filter((o) => (o as HTMLElement).offsetParent !== null); // only visible
+
+              const v = val.toLowerCase();
+              // Prefer exact match, then startsWith, then substring
+              const target =
+                options.find((o) => (o.textContent ?? '').trim().toLowerCase() === v) ??
+                options.find((o) => (o.textContent ?? '').trim().toLowerCase().startsWith(v)) ??
+                options.find((o) => (o.textContent ?? '').trim().toLowerCase().includes(v));
+
+              if (target) {
+                (target as HTMLElement).click();
+                resolve(true);
+              } else {
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                resolve(false);
+              }
+            }, 600);
+          });
+        }, containerSel, value, FIELD_MARKER, field.idx);
+
+        if (!selected) logger.warn({ labelText: field.labelText, value }, 'Combobox: no matching option found');
       } else if (field.kind === 'options' && field.optionLabels) {
         const matchIdx = field.optionLabels.findIndex((l) => l.toLowerCase().includes(value!.toLowerCase()));
         if (matchIdx >= 0) {
