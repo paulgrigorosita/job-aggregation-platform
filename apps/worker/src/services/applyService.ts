@@ -2,7 +2,7 @@ import puppeteer, { type Page } from 'puppeteer';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { db } from '@jap/database';
-import { createLogger } from '@jap/shared';
+import { createLogger, APPLICATION_ANSWER_FIELDS, type ApplicationAnswers } from '@jap/shared';
 
 const logger = createLogger('worker:apply');
 
@@ -154,6 +154,116 @@ async function fillField(page: Page, selector: string, value: string) {
   await el.type(value, { delay: 20 });
 }
 
+interface QuestionField {
+  idx: number;
+  labelText: string;
+  kind: 'text' | 'textarea' | 'select' | 'options';
+  optionLabels?: string[];
+}
+
+const FIELD_MARKER = 'data-apply-idx';
+
+async function fillSavedAnswers(page: Page, answers: ApplicationAnswers, logger: ReturnType<typeof createLogger>) {
+  const compiledPatterns = APPLICATION_ANSWER_FIELDS
+    .filter((f) => answers[f.key])
+    .map((f) => ({ key: f.key, regex: new RegExp(f.questionPattern, 'i'), value: String(answers[f.key]) }));
+
+  const customAnswers = (answers.customAnswers ?? []).filter((qa) => qa.question && qa.answer);
+
+  const fields: QuestionField[] = await page.evaluate((marker) => {
+    const out: Array<{ idx: number; labelText: string; kind: string; optionLabels?: string[] }> = [];
+    const containers = document.querySelectorAll('.field, [class*="field"], fieldset');
+    containers.forEach((container, idx) => {
+      const label = container.querySelector('label');
+      if (!label) return;
+      const labelText = (label.textContent ?? '').trim();
+      if (!labelText) return;
+
+      const select = container.querySelector('select');
+      const textarea = container.querySelector('textarea');
+      const textInput = container.querySelector('input[type="text"], input[type="email"], input[type="tel"], input:not([type])');
+      const options = container.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+
+      let kind: string | null = null;
+      let optionLabels: string[] | undefined;
+
+      if (select) {
+        kind = 'select';
+        optionLabels = Array.from(select.querySelectorAll('option')).map((o) => (o.textContent ?? '').trim());
+      } else if (options.length > 0) {
+        kind = 'options';
+        optionLabels = Array.from(options).map((o) => {
+          const id = o.getAttribute('id');
+          const optLabel = id ? container.querySelector(`label[for="${id}"]`) : null;
+          return (optLabel?.textContent ?? o.getAttribute('value') ?? '').trim();
+        });
+      } else if (textarea) {
+        kind = 'textarea';
+      } else if (textInput) {
+        kind = 'text';
+      }
+
+      if (!kind) return;
+      container.setAttribute(marker, String(idx));
+      out.push({ idx, labelText, kind, optionLabels });
+    });
+    return out;
+  }, FIELD_MARKER) as QuestionField[];
+
+  for (const field of fields) {
+    let value: string | undefined;
+
+    const matched = compiledPatterns.find((p) => p.regex.test(field.labelText));
+    if (matched) {
+      value = matched.value;
+    } else {
+      const custom = customAnswers.find((qa) => field.labelText.toLowerCase().includes(qa.question.toLowerCase()));
+      if (custom) value = custom.answer;
+    }
+
+    if (!value) continue;
+
+    const containerSel = `[${FIELD_MARKER}="${field.idx}"]`;
+
+    try {
+      if (field.kind === 'text') {
+        await fillField(page, `${containerSel} input`, value);
+      } else if (field.kind === 'textarea') {
+        const el = await page.$(`${containerSel} textarea`);
+        if (el) {
+          await el.click({ clickCount: 3 });
+          await el.type(value, { delay: 10 });
+        }
+      } else if (field.kind === 'select') {
+        const select = await page.$(`${containerSel} select`);
+        if (select) {
+          await page.evaluate((sel, val, marker, idx) => {
+            const container = document.querySelector(`[${marker}="${idx}"]`);
+            const selectEl = container?.querySelector('select');
+            if (!selectEl) return;
+            const target = Array.from(selectEl.options).find((o) =>
+              (o.textContent ?? '').trim().toLowerCase().includes(val.toLowerCase())
+            );
+            if (target) {
+              selectEl.value = target.value;
+              selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }, containerSel, value, FIELD_MARKER, field.idx);
+        }
+      } else if (field.kind === 'options' && field.optionLabels) {
+        const matchIdx = field.optionLabels.findIndex((l) => l.toLowerCase().includes(value!.toLowerCase()));
+        if (matchIdx >= 0) {
+          const inputs = await page.$$(`${containerSel} input[type="radio"], ${containerSel} input[type="checkbox"]`);
+          const target = inputs[matchIdx];
+          if (target) await target.click();
+        }
+      }
+    } catch (err) {
+      logger.warn({ labelText: field.labelText, err }, 'Failed to fill saved answer for field');
+    }
+  }
+}
+
 export function screenshotPath(jobId: string) {
   return join('/tmp', `apply_preview_${jobId}.png`);
 }
@@ -247,6 +357,10 @@ export async function applyToJob(jobId: string, dryRun = false): Promise<void> {
         await pw.type(resume.portfolioUrl, { delay: 20 });
       }
     }
+
+    // Fill in saved application answer defaults (recurring questions + custom Q&A)
+    const applicationAnswers = (baseResume.applicationAnswers ?? {}) as ApplicationAnswers;
+    await fillSavedAnswers(page, applicationAnswers, logger);
 
     // Upload resume PDF
     const fileInput = await page.$('input[type="file"]');

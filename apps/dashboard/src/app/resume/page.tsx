@@ -1,5 +1,6 @@
 import { fetchResume } from '@/lib/api';
 import { ResumeEditor } from './ResumeEditor';
+import { ApplicationAnswersEditor } from './ApplicationAnswersEditor';
 
 export default async function ResumePage() {
   let resume = null;
@@ -16,6 +17,7 @@ export default async function ResumePage() {
         </p>
       </div>
       <ResumeEditor initial={resume} />
+      <ApplicationAnswersEditor resume={resume} />
     </div>
   );
 }

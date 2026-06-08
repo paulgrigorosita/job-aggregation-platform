@@ -92,6 +92,7 @@ model Resume {
   workHistory  Json     // WorkEntry[]
   education    Json     @default("[]") // EducationEntry[]
   projects     Json     @default("[]") // ProjectEntry[]
+  applicationAnswers Json @default("{}") // ApplicationAnswers — saved defaults for recurring application questions
   createdAt    DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

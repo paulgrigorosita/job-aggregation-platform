@@ -34,6 +34,7 @@ export interface ResumeProfile {
   workHistory: WorkEntry[];
   education: EducationEntry[];
   projects: ProjectEntry[];
+  applicationAnswers?: Record<string, unknown>;
 }
 
 export interface TailoredResume extends ResumeProfile {

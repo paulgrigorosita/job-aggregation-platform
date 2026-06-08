@@ -57,6 +57,30 @@ export interface ProjectEntry {
   tech: string[];
 }
 
+export interface CustomQA {
+  question: string;
+  answer: string;
+}
+
+export interface ApplicationAnswers {
+  preferredFirstName?: string;
+  locationCity?: string;
+  zipCode?: string;
+  linkedinProfile?: string;
+  howHeardAboutUs?: string;
+  workAuthorized?: string;
+  requireSponsorship?: string;
+  genderIdentity?: string;
+  transgender?: string;
+  sexualOrientation?: string;
+  raceEthnicity?: string;
+  veteranStatus?: string;
+  disability?: string;
+  firstGenProfessional?: string;
+  coverLetter?: string;
+  customAnswers?: CustomQA[];
+}
+
 export interface ResumeProfile {
   id?: string;
   name: string;
@@ -71,6 +95,7 @@ export interface ResumeProfile {
   workHistory: WorkEntry[];
   education: EducationEntry[];
   projects: ProjectEntry[];
+  applicationAnswers?: ApplicationAnswers;
 }
 
 export type TailoredResume = ResumeProfile;

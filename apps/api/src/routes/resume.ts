@@ -36,6 +36,7 @@ export async function resumeRoutes(app: FastifyInstance) {
         workHistory: body.workHistory as object[],
         education: (body.education ?? []) as object[],
         projects: (body.projects ?? []) as object[],
+        applicationAnswers: (body.applicationAnswers ?? {}) as object,
       };
 
       const resume = existing
